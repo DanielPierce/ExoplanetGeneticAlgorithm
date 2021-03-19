@@ -1,20 +1,28 @@
 import Constants as const
 from Constants import CONSTANTS
 
+import lightkurve as lk
+import numpy as np
 import random
-#print(CONSTANTS[const.ECC][const.MAX])
+import statistics
 
 
+targetStar = 'TIC 307210830 c'
+targetCurve = lk.LightCurve()
 
+
+def generateLightCurve(individual):
+    myTimes = targetCurve.time
+    myFlux = [random.randrange(21200,21600,1)  * targetCurve.flux.unit for i in range(len(targetCurve.time))]
+    myErr = [0 * targetCurve.flux_err.unit for i in range(len(myTimes))]
+    return lk.LightCurve(time=myTimes, flux=myFlux, flux_err=myErr)
 
 def evalOneMax(individual):
-    numPlanets = individual[const.NUMPLANETS]
-    if(numPlanets == 0):
-        return 0,
-    sum = 0
-    for num in range(numPlanets):
-        sum += individual[num * const.ATTRPERPLANET]
-    return ((sum/numPlanets) + numPlanets),
+    myLightCurve = generateLightCurve(individual)
+
+    diffs = [starFlux - calcFlux for starFlux, calcFlux in zip(targetCurve.flux.value, myLightCurve.flux.value)]
+    absDiff = [abs(i) for i in diffs]
+    return [statistics.mean(absDiff)]
 
 def lerp(a,b,c):
     return (c * b) + ((1-c) * a)

@@ -3,12 +3,20 @@
 import Thesis as helpers
 import Constants as const
 
+import lightkurve as lk
+import numpy as np
 import random
 
 from deap import base
 from deap import creator
 from deap import tools
 
+import sys, getopt
+import os
+
+inputFile = ""
+curveOutputFile = ""
+dataOutputFile = ""
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -27,9 +35,9 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
-def main():
-    pop = toolbox.population(n=300)
-    # Evaluate the entire population
+def runGA():
+    pop = toolbox.population(n=5)
+    # Evaluate the entire populationprint("first fitness")
     fitnesses = list(map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
@@ -44,7 +52,7 @@ def main():
     g = 0
     
     # Begin the evolution
-    while g < 1000:
+    while g < 1:
         # A new generation
         g = g + 1
         print("-- Generation %i --" % g)
@@ -78,11 +86,13 @@ def main():
         mean = sum(fits) / length
         sum2 = sum(x*x for x in fits)
         std = abs(sum2 / length - mean**2)**0.5
-        
         print("  Min %s" % min(fits))
         print("  Max %s" % max(fits))
         print("  Avg %s" % mean)
         print("  Std %s" % std)
+    return pop
+
+def printResults(pop):
     fits = [ind.fitness.values[0] for ind in pop]
     bestIndiv = pop[fits.index(max(fits))]
     print("Num planets: %s" %bestIndiv[const.NUMPLANETS])
@@ -91,6 +101,54 @@ def main():
         print("  Planet %s: %f" %(num, bestIndiv[num * const.ATTRPERPLANET]))
     print(bestIndiv)
 
+def saveResults(pop):
+    global inputFile
+    global curveOutputFile
+    global dataOutputFile
+
+    if os.path.exists(curveOutputFile):
+        os.remove(curveOutputFile)
+    if os.path.exists(dataOutputFile):
+        os.remove(dataOutputFile)
+
+    fits = [ind.fitness.values[0] for ind in pop]
+    bestIndiv = pop[fits.index(max(fits))]
+
+    lc = helpers.generateLightCurve(bestIndiv)
+    lc.to_fits(curveOutputFile, overwrite=True)
+
+    dataFile = open(dataOutputFile, 'w')
+    for characteristic in bestIndiv:
+        dataFile.write(str(characteristic) + "\n")
+    dataFile.close()
+
+def getLightCurve():
+    global inputFile
+    global curveOutputFile
+    global dataOutputFile
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:")
+    except getopt.GetoptError:
+        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput>')
+    for opt, arg in opts:
+        if opt == '-i':
+            inputFile = arg
+        elif opt == '-c':
+            curveOutputFile = arg
+        elif opt == '-d':
+            dataOutputFile = arg 
+    
+    print("Input: %s" %inputFile)
+    print("Curve: %s" %curveOutputFile)
+    print("Data : %s" %dataOutputFile)
+
+    helpers.targetCurve = lk.read(inputFile)
+
+def main():
+    getLightCurve()
+    pop = runGA()
+    printResults(pop)
+    saveResults(pop)
 
 if __name__ == "__main__":
     main()
