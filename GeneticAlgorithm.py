@@ -26,7 +26,7 @@ toolbox = base.Toolbox()
 toolbox.register("attr_int", random.randint, 0, const.MAXPLANETS)
 # Structure initializers
 toolbox.register("individual", tools.initRepeat, creator.Individual, 
-    toolbox.attr_int, 2 + const.ATTRPERPLANET * const.MAXPLANETS)
+    toolbox.attr_int, 4 + const.ATTRPERPLANET * const.MAXPLANETS)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
