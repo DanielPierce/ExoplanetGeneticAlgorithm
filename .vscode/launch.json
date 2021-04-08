@@ -12,7 +12,8 @@
             "args": [
                 "-i", "DefaultFileTIC307210830C.fits",
                 "-c", "OutputCurve.fits",
-                "-d", "OutputData.txt"],
+                "-d", "OutputData.txt",
+                "-t", "2"],
             "console": "integratedTerminal"
         }
     ]

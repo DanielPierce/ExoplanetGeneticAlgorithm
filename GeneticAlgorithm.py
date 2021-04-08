@@ -15,9 +15,12 @@ import sys, getopt
 import os
 import time
 
+import multiprocessing as mp
+
 inputFile = ""
 curveOutputFile = ""
 dataOutputFile = ""
+numThreads = 0
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -69,6 +72,8 @@ def runGA():
     fits = [ind.fitness.values[0] for ind in pop]
         # Variable keeping track of the number of generations
     g = 0
+
+    threadPool = mp.Pool(numThreads)
     
     # Begin the evolution
     while g < 1:
@@ -148,10 +153,11 @@ def getLightCurve():
     global inputFile
     global curveOutputFile
     global dataOutputFile
+    global numThreads
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:")
     except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput>')
+        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput> -t <numthreads>')
     for opt, arg in opts:
         if opt == '-i':
             inputFile = arg
@@ -159,10 +165,13 @@ def getLightCurve():
             curveOutputFile = arg
         elif opt == '-d':
             dataOutputFile = arg 
+        elif opt == '-t':
+            numThreads = int(arg)
     
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
+    print("Threads : %s" %numThreads)
 
     helpers.targetCurve = lk.read(inputFile)
 
