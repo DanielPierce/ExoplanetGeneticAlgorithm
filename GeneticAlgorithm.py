@@ -39,26 +39,24 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
+def initializeThreads(target):
+    helpers.targetCurve = target
+
 def runGA():
-    pop = toolbox.population(n=5)
+    threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
+
+
+    pop = toolbox.population(n=6)
     tic = time.perf_counter()
-    #print("before")
-    #for i in range(len(pop)):
-        #print(pop[i])
-        #print(pop[i][const.STARMASS])
-        #print()
-    tempPop = list(map(helpers.validateIndividual, pop))
-    #print("after")
-    #for i in range(len(tempPop)):
-        #print(tempPop[i])
-        #print(tempPop[i][const.STARMASS])
-        #print()
+    # does not seem to be worth it to do this in many processes, remove?
+    tempPop = list(threadPool.map(helpers.validateIndividual, pop))
+    pop = tempPop
     toc = time.perf_counter()
     print(f"Validated individuals in {toc - tic:0.4f} seconds")
 
     # Evaluate the entire populationprint("first fitness")
     tic = time.perf_counter()
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = list(threadPool.map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
     for ind, fit in zip(pop, fitnesses):
@@ -72,8 +70,6 @@ def runGA():
     fits = [ind.fitness.values[0] for ind in pop]
         # Variable keeping track of the number of generations
     g = 0
-
-    threadPool = mp.Pool(numThreads)
     
     # Begin the evolution
     while g < 1:

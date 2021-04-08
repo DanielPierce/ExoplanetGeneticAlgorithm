@@ -146,10 +146,12 @@ def mutation(individual, indpb):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
 
 def validateIndividual(individual):
+    print(targetCurve)
     for index in range(len(individual)):
         attrIndex = index % const.ATTRPERPLANET
         if (index == const.NUMPLANETS):
-            individual[index] = random.randint(0, const.MAXPLANETS)
+            #individual[index] = random.randint(0, const.MAXPLANETS)
+            individual[index] = 3
         elif (index == const.STARRADIUS):
             if(individual[index] <= const.STARRADIUSMIN):
                 individual[index] = const.STARRADIUSMIN
