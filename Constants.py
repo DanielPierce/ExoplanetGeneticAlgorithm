@@ -20,7 +20,7 @@ MAX = 1
 MIN = 2
 
 CONSTANTS = [[10, 500000, 1000],
-             [0.001, 1, 0],
+             [0.001, 0.999, 0],
              [1000, 70000000000, 10000],
              [0.1, 180, -180],
              [0.1, 360, 0],
@@ -33,3 +33,7 @@ STARMASSMUTFACTOR = math.pow(10,25)
 STARBASEFLUXMUTFACTOR = 1000
 
 GRAVITATIONALCONSTANT = 0.000000000066743 # m^3 kg^-1 s^-2
+
+STARMASSMIN = 1.898 * math.pow(10,27) * 50 # hypothetical minimum mass of star is 75x the mass of jupiter, went with 50x to include brown dwarfs
+STARRADIUSMIN = STARRADIUSMUTFACTOR
+STARBASEFLUXMIN = 1000 

@@ -13,6 +13,7 @@ from deap import tools
 
 import sys, getopt
 import os
+import time
 
 inputFile = ""
 curveOutputFile = ""
@@ -37,8 +38,26 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 
 def runGA():
     pop = toolbox.population(n=5)
+    tic = time.perf_counter()
+    #print("before")
+    #for i in range(len(pop)):
+        #print(pop[i])
+        #print(pop[i][const.STARMASS])
+        #print()
+    tempPop = list(map(helpers.validateIndividual, pop))
+    #print("after")
+    #for i in range(len(tempPop)):
+        #print(tempPop[i])
+        #print(tempPop[i][const.STARMASS])
+        #print()
+    toc = time.perf_counter()
+    print(f"Validated individuals in {toc - tic:0.4f} seconds")
+
     # Evaluate the entire populationprint("first fitness")
+    tic = time.perf_counter()
     fitnesses = list(map(toolbox.evaluate, pop))
+    toc = time.perf_counter()
+    print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
     # CXPB  is the probability with which two individuals
@@ -53,6 +72,7 @@ def runGA():
     
     # Begin the evolution
     while g < 1:
+        tic = time.perf_counter()
         # A new generation
         g = g + 1
         print("-- Generation %i --" % g)
@@ -90,6 +110,8 @@ def runGA():
         print("  Max %s" % max(fits))
         print("  Avg %s" % mean)
         print("  Std %s" % std)
+        toc = time.perf_counter()
+        print(f"Generation {g} complete in {toc - tic:0.4f} seconds")
     return pop
 
 def printResults(pop):
@@ -114,7 +136,7 @@ def saveResults(pop):
     fits = [ind.fitness.values[0] for ind in pop]
     bestIndiv = pop[fits.index(max(fits))]
 
-    lc = helpers.generateLightCurve(bestIndiv)
+    lc = helpers.generateLightcurve(bestIndiv)
     lc.to_fits(curveOutputFile, overwrite=True)
 
     dataFile = open(dataOutputFile, 'w')
