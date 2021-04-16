@@ -15,9 +15,12 @@ import sys, getopt
 import os
 import time
 
+import multiprocessing as mp
+
 inputFile = ""
 curveOutputFile = ""
 dataOutputFile = ""
+numThreads = 0
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -36,30 +39,30 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
+def initializeThreads(target):
+    helpers.targetCurve = target
+
 def runGA():
-    pop = toolbox.population(n=5)
+    veryBeginning = time.perf_counter()
+    threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
+
+
+    pop = toolbox.population(n=8)
     tic = time.perf_counter()
-    #print("before")
-    #for i in range(len(pop)):
-        #print(pop[i])
-        #print(pop[i][const.STARMASS])
-        #print()
     tempPop = list(map(helpers.validateIndividual, pop))
-    #print("after")
-    #for i in range(len(tempPop)):
-        #print(tempPop[i])
-        #print(tempPop[i][const.STARMASS])
-        #print()
+    pop = tempPop
     toc = time.perf_counter()
     print(f"Validated individuals in {toc - tic:0.4f} seconds")
 
     # Evaluate the entire populationprint("first fitness")
     tic = time.perf_counter()
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = list(threadPool.map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
+
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit
+
     # CXPB  is the probability with which two individuals
     #       are crossed
     #
@@ -71,12 +74,13 @@ def runGA():
     g = 0
     
     # Begin the evolution
-    while g < 1:
+    while g < 5:
         tic = time.perf_counter()
         # A new generation
         g = g + 1
         print("-- Generation %i --" % g)
         # Select the next generation individuals
+        # add some sort of elitism or hall of fame
         offspring = toolbox.select(pop, len(pop))
         # Clone the selected individuals
         offspring = list(map(toolbox.clone, offspring))       
@@ -94,9 +98,10 @@ def runGA():
         
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = map(toolbox.evaluate, invalid_ind)
+        fitnesses = threadPool.map(toolbox.evaluate, invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
+        # shuffle positions of population bc of positional crossover
         pop[:] = offspring
 
         # Gather all the fitnesses in one list and print the stats
@@ -112,15 +117,23 @@ def runGA():
         print("  Std %s" % std)
         toc = time.perf_counter()
         print(f"Generation {g} complete in {toc - tic:0.4f} seconds")
+        
+    veryEnd = time.perf_counter()
+    print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
     return pop
 
 def printResults(pop):
     fits = [ind.fitness.values[0] for ind in pop]
     bestIndiv = pop[fits.index(max(fits))]
-    print("Num planets: %s" %bestIndiv[const.NUMPLANETS])
+    print("-----------BEST INDIVIDUAL'S STATS-----------")
     print("Fitness: %s" %helpers.evalOneMax(bestIndiv))
     for num in range(bestIndiv[const.NUMPLANETS]):
-        print("  Planet %s: %f" %(num, bestIndiv[num * const.ATTRPERPLANET]))
+        print(f"  Planet {num}\n   Radius: {bestIndiv[num * const.ATTRPERPLANET + const.RADIUS]} | ECC: {bestIndiv[num * const.ATTRPERPLANET + const.ECC]} | SMA: {bestIndiv[num * const.ATTRPERPLANET + const.SMA]} | INC: {bestIndiv[num * const.ATTRPERPLANET + const.INC]} | LOAN: {bestIndiv[num * const.ATTRPERPLANET + const.LOAN]} | AOP: {bestIndiv[num * const.ATTRPERPLANET + const.AOP]} | MA: {bestIndiv[num * const.ATTRPERPLANET + const.MA]}")
+    print(f"Num Planets: {bestIndiv[const.NUMPLANETS]}")
+    print(f"Star Radius: {bestIndiv[const.STARRADIUS]} km")
+    print(f"Star Mass  : {bestIndiv[const.STARMASS]} kg")
+    print(f"Base Flux  : {bestIndiv[const.STARBASEFLUX]} e/s")
+    print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
 def saveResults(pop):
@@ -148,10 +161,11 @@ def getLightCurve():
     global inputFile
     global curveOutputFile
     global dataOutputFile
+    global numThreads
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:")
     except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput>')
+        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput> -t <numthreads>')
     for opt, arg in opts:
         if opt == '-i':
             inputFile = arg
@@ -159,19 +173,24 @@ def getLightCurve():
             curveOutputFile = arg
         elif opt == '-d':
             dataOutputFile = arg 
+        elif opt == '-t':
+            numThreads = int(arg)
     
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
+    print("Threads : %s" %numThreads)
 
     helpers.targetCurve = lk.read(inputFile)
 
 def main():
+    allToldStart = time.perf_counter()
     getLightCurve()
     pop = runGA()
     printResults(pop)
     saveResults(pop)
+    allToldEnd = time.perf_counter()
+    print(f"All told, ran to completion in {allToldEnd - allToldStart:0.4f} seconds")
 
 if __name__ == "__main__":
     main()
-    print ('finished')
