@@ -125,33 +125,37 @@ def mutation(individual, indpb):
     indexToMutate = random.randint(0,len(individual)-1)
     attrIndex = indexToMutate % const.ATTRPERPLANET
     if(indexToMutate == const.NUMPLANETS):
+        print("mutating num planets")
         individual[indexToMutate] = random.randint(0, const.MAXPLANETS)
     elif (indexToMutate == const.STARRADIUS):
+        print("mutating star radius")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARRADIUSMUTFACTOR)
         if(individual[indexToMutate] <= 10000):
             individual[indexToMutate] = 10000
     elif (indexToMutate == const.STARMASS):
+        print("mutating star mass")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARMASSMUTFACTOR)
         if(individual[indexToMutate] <= const.STARMASSMIN):
             individual[indexToMutate] = const.STARMASSMIN
     elif (indexToMutate == const.STARBASEFLUX):
+        print("mutating base flux")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARBASEFLUXMUTFACTOR)
         if(individual[indexToMutate] < 0):
             individual[indexToMutate] = 0
     else:
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], CONSTANTS[attrIndex][const.MUTFACTOR])
+        print(f"mutating attribute {indexToMutate}")
         if(individual[indexToMutate] > CONSTANTS[attrIndex][const.MAX]):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MAX]
         if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
 
 def validateIndividual(individual):
-    print(targetCurve)
     for index in range(len(individual)):
         attrIndex = index % const.ATTRPERPLANET
         if (index == const.NUMPLANETS):
-            #individual[index] = random.randint(0, const.MAXPLANETS)
-            individual[index] = 3
+            individual[index] = random.randint(0, const.MAXPLANETS)
+            #individual[index] = 3
         elif (index == const.STARRADIUS):
             if(individual[index] <= const.STARRADIUSMIN):
                 individual[index] = const.STARRADIUSMIN
@@ -189,8 +193,34 @@ def validateIndividual(individual):
             if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
                 individual[index] = CONSTANTS[attrIndex][const.MAX]
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
-            
-        
+                individual[index] = CONSTANTS[attrIndex][const.MIN]    
+    return individual
+
+def randomizeIndividual(individual):
+    for index in range(len(individual)):
+        attrIndex = index % const.ATTRPERPLANET
+        if (index == const.NUMPLANETS):
+            individual[index] = random.randint(0, const.MAXPLANETS)
+            #individual[index] = 3
+        elif (index == const.STARRADIUS):
+            individual[index] = random.randint(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
+        elif (index == const.STARMASS):
+            individual[index] = random.randint(const.STARMASSMIN, const.STARMASSMIN * 100)
+        elif (index == const.STARBASEFLUX):
+            individual[index] = random.randint(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
+        elif (attrIndex == const.RADIUS):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])
+        elif (attrIndex == const.SMA):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+        elif (attrIndex == const.ECC):
+            individual[index] = random.uniform(0.1, 0.4)
+        elif (attrIndex == const.INC):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+        elif (attrIndex == const.LOAN):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+        elif (attrIndex == const.AOP):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+        elif (attrIndex == const.MA):
+            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
     return individual
 
