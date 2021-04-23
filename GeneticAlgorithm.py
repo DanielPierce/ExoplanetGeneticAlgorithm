@@ -47,7 +47,7 @@ def runGA():
     threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
 
 
-    pop = toolbox.population(n=8)
+    pop = toolbox.population(n=1)
     tic = time.perf_counter()
     tempPop = list(map(helpers.validateIndividual, pop))
     pop = tempPop
@@ -56,7 +56,7 @@ def runGA():
 
     # Evaluate the entire populationprint("first fitness")
     tic = time.perf_counter()
-    fitnesses = list(threadPool.map(toolbox.evaluate, pop))
+    fitnesses = list(map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 
@@ -74,7 +74,7 @@ def runGA():
     g = 0
     
     # Begin the evolution
-    while g < 5:
+    while g < 15:
         tic = time.perf_counter()
         # A new generation
         g = g + 1

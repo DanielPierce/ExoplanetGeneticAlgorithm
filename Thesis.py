@@ -41,45 +41,55 @@ def uniformSourceLightcurveAlgorithm(individual):
     for planetIndex in range(individual[const.NUMPLANETS]):
         print("on planet %s" %planetIndex)
         rstar = individual[const.STARRADIUS] # r*, stellar radius in km
-        rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius
-        p = rp / rstar # size ratio
-                                                                                                              # semimajor axis in km to m
-        a = individual[const.ATTRPERPLANET * planetIndex + const.SMA] * 1000
-        mu = const.GRAVITATIONALCONSTANT * individual[const.STARMASS]
-        period = 2 * math.pi * math.sqrt(math.pow(a, 3) / mu)
+        rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
+        p = rp / rstar # size ratio, km/km = scalar
+        p2 = math.pow(p,2) # scalar squared = scalar
+
+        
+        sma = individual[const.ATTRPERPLANET * planetIndex + const.SMA] # km
+        ecc = individual[const.ATTRPERPLANET * planetIndex + const.ECC] # scalar
+        meanAnomalyAtEpoch = individual[const.ATTRPERPLANET * planetIndex + const.MA] # radians
+        ecc2 = math.pow(ecc,2) # scalar
+                                                                                                              
+        a = individual[const.ATTRPERPLANET * planetIndex + const.SMA] * 1000 # semimajor axis in km to m
+        mu = const.GRAVITATIONALCONSTANT * individual[const.STARMASS] # m^3 kg^-1 s^-2 * kg = m^3 s^-2
+        period = 2 * math.pi * math.sqrt(math.pow(a, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
         
         zeroTime = dateparser.parse(targetCurve.time.iso[0])
 
         myFlux = []
         for timeIndex in targetCurve.time.iso:
-            sma = individual[const.ATTRPERPLANET * planetIndex + const.SMA]
-            ecc = individual[const.ATTRPERPLANET * planetIndex + const.ECC]
-            ecc2 = math.pow(ecc,2)
 
             currentTime = dateparser.parse(timeIndex)
-            epochOffset = (currentTime - zeroTime).total_seconds() / period * 360
+            seconds = (currentTime - zeroTime).total_seconds()
+            epochOffsetRadians = seconds / period * 2 * math.pi # s / s * radians = radians
+
+            currentMeanAnomaly = (meanAnomalyAtEpoch + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
 
             try:
-                eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(ecc, individual[const.ATTRPERPLANET * planetIndex + const.MA] + epochOffset)
+                eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(ecc, currentMeanAnomaly) # radians???
             except:
                 toc = time.perf_counter()
                 #print(f"Planet {planetIndex} eccentric anomaly could not converge at timestep {timeIndex} in {toc - tic:0.4f} seconds")
                 myFlux.append(-1)
                 continue
                 
+            eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
+            
             #print(f"Planet {planetIndex} eccentric anomaly did converge at timestep {timeIndex}")
-            trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2))
+            trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
+            trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
 
-            #d = (sma * (1 - ecc2))/(1-ecc * math.cos(deg * math.radians(trueAnomaly))) # center to center distance between star and planet
-            d = (sma * (1 - ecc2))/(1-ecc * math.cos(math.radians(trueAnomaly))) # center to center distance between star and planet
+            # center to center distance between star and planet
+            #d = (sma * (1 - ecc2))/(1-ecc * math.cos(trueAnomaly))            # km?   takes degrees from apoapse
+            d = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
 
-            z = d / rstar # normalized seperation of centers
-            p2 = math.pow(p,2)
-            z2 = math.pow(z,2)
-            result1 = (1 - p2 + z2) / (2 * z) # wants radians, all planet characteristics are in degrees
-            k1 = math.acos(math.radians(result1))
-            result2 = (p2 + z2 - 1) / (2 * p * z)
-            k0 = math.acos(math.radians(result2)) # wants radians, all planet characteristics are in degrees
+            z = d / rstar # normalized seperation of centers, km/km = scalar
+            z2 = math.pow(z,2) # scalar squared = scalar
+            result1 = (1 - p2 + z2) / (2 * z) # all scalars so scalar
+            k1 = math.acos(result1)
+            result2 = (p2 + z2 - 1) / (2 * p * z) # all scalars so scalar
+            k0 = math.acos(result2)
 
             myFlux.append(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux,k0,k1))
             #print(f"Did timestep in {toc - tic:0.4f} seconds")
@@ -173,25 +183,26 @@ def validateIndividual(individual):
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
                 individual[index] = CONSTANTS[attrIndex][const.MIN]
         elif (attrIndex == const.ECC):
-            individual[index] = random.uniform(0.1, 0.4)
+            #individual[index] = random.uniform(0.1, 0.4)
+            individual[index] = 0
         elif (attrIndex == const.INC):
             if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
                 individual[index] = CONSTANTS[attrIndex][const.MAX]
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
                 individual[index] = CONSTANTS[attrIndex][const.MIN]
         elif (attrIndex == const.LOAN):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
+            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
+                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
                 individual[index] = CONSTANTS[attrIndex][const.MIN]
         elif (attrIndex == const.AOP):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
+            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
+                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
                 individual[index] = CONSTANTS[attrIndex][const.MIN]
         elif (attrIndex == const.MA):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
+            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
+                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
             if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
                 individual[index] = CONSTANTS[attrIndex][const.MIN]    
     return individual
