@@ -4,11 +4,12 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "Python: Current File",
+            "name": "Run GA",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/GeneticAlgorithm.py",
             "args": [
                 "-i", "DefaultFileTIC307210830C.fits",
                 "-c", "OutputCurve.fits",

@@ -30,7 +30,7 @@ toolbox = base.Toolbox()
 toolbox.register("attr_int", random.randint, 0, const.MAXPLANETS)
 # Structure initializers
 toolbox.register("individual", tools.initRepeat, creator.Individual, 
-    toolbox.attr_int, 4 + const.ATTRPERPLANET * const.MAXPLANETS)
+    toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
@@ -133,6 +133,7 @@ def printResults(pop):
     print(f"Star Radius: {bestIndiv[const.STARRADIUS]} km")
     print(f"Star Mass  : {bestIndiv[const.STARMASS]} kg")
     print(f"Base Flux  : {bestIndiv[const.STARBASEFLUX]} e/s")
+    print(f"Distance   : {bestIndiv[const.DISTANCE]} km")
     print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
