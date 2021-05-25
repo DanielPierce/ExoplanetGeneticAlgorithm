@@ -1,5 +1,6 @@
 import Constants as const
 from Constants import CONSTANTS
+import CalculationHelpers as ch
 
 import lightkurve as lk
 import numpy as np
@@ -10,6 +11,8 @@ import orbital
 
 import dateutil.parser as dateparser
 import time
+
+import mpmath as mpm
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
@@ -40,10 +43,15 @@ def uniformSourceLightcurveAlgorithm(individual):
     overallFlux = [baseFlux for i in range(len(targetCurve.time))]
     for planetIndex in range(individual[const.NUMPLANETS]):
         print("on planet %s" %planetIndex)
-        rstar = individual[const.STARRADIUS] # r*, stellar radius in km
-        rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
-        p = rp / rstar # size ratio, km/km = scalar
-        p2 = math.pow(p,2) # scalar squared = scalar
+        
+        #rstar = individual[const.STARRADIUS] # r*, stellar radius in km
+        #rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
+        rstar = mpm.mpf('0')
+        starSize = mpm.mpf(individual[const.STARRADIUS])
+        starDist = mpm.mpf(2 * individual[const.DISTANCE])
+        starRatio = mpm.mpf(starSize / starDist)
+
+        rstar = mpm.atan(starRatio)
 
         
         sma = individual[const.ATTRPERPLANET * planetIndex + const.SMA] # km
@@ -80,9 +88,31 @@ def uniformSourceLightcurveAlgorithm(individual):
             trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
             trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
 
+            currentRadius = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
+
+            #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
+
+            cartesianPosition = ch.calculatePosition(individual, planetIndex, currentRadius, trueAnomaly)
+            
+            rp = mpm.mpf('0')       
+            pSize = mpm.mpf(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS])
+            pDist = mpm.mpf(2 * individual[const.DISTANCE] + cartesianPosition[1])
+            pRatio = mpm.mpf(pSize / pDist)
+
+            rp = mpm.atan(pRatio)
+            
+            p = rp / rstar # size ratio, km/km = scalar
+            p2 = math.pow(p,2) # scalar squared = scalar
+
+            collapser = [1,0,1]
+            collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]
+
             # center to center distance between star and planet
-            #d = (sma * (1 - ecc2))/(1-ecc * math.cos(trueAnomaly))            # km?   takes degrees from apoapse
-            d = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
+            d = math.dist([0,0,0], collapsedPosition)
+
+            if(d > rp + rstar):
+                myFlux.append(individual[const.STARBASEFLUX])
+                continue
 
             z = d / rstar # normalized seperation of centers, km/km = scalar
             z2 = math.pow(z,2) # scalar squared = scalar
@@ -100,7 +130,6 @@ def uniformSourceLightcurveAlgorithm(individual):
     toc = time.perf_counter()
     print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
     return overallFlux
-
 
 def generateLightcurve(individual):
     myTimes = targetCurve.time
@@ -175,6 +204,8 @@ def validateIndividual(individual):
         elif (index == const.STARBASEFLUX):
             if(individual[index] < const.STARBASEFLUXMIN):
                 individual[index] = const.STARBASEFLUXMIN
+        elif (index == const.DISTANCE):
+            individual[index] = 9460730000000 * 10 # 10 lightyears
         elif (attrIndex == const.RADIUS):
             individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MIN])
         elif (attrIndex == const.SMA):
@@ -186,10 +217,7 @@ def validateIndividual(individual):
             #individual[index] = random.uniform(0.1, 0.4)
             individual[index] = 0
         elif (attrIndex == const.INC):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
+            individual[index] = 0
         elif (attrIndex == const.LOAN):
             if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
                 individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]

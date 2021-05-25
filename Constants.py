@@ -6,6 +6,7 @@ NUMPLANETS = MAXPLANETS * ATTRPERPLANET
 STARRADIUS = NUMPLANETS + 1 # radius of star in km
 STARMASS = STARRADIUS + 1 # mass of star in kg
 STARBASEFLUX = STARMASS + 1 # Base flux of the star
+DISTANCE = STARBASEFLUX + 1 # Distance to the star, in km
 
 RADIUS = 0  # in km
 ECC = 1     # eccentricity, unitless 1>x>0
@@ -35,5 +36,5 @@ STARBASEFLUXMUTFACTOR = 1000
 GRAVITATIONALCONSTANT = 6.674 * math.pow(10, -11) # m^3 kg^-1 s^-2
 
 STARMASSMIN = 1.898 * math.pow(10,27) * 50 # hypothetical minimum mass of star is 75x the mass of jupiter, went with 50x to include brown dwarfs
-STARRADIUSMIN = STARRADIUSMUTFACTOR
+STARRADIUSMIN = STARRADIUSMUTFACTOR * 1000
 STARBASEFLUXMIN = 1000 
