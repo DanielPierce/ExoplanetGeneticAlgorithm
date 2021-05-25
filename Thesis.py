@@ -12,6 +12,8 @@ import orbital
 import dateutil.parser as dateparser
 import time
 
+import mpmath as mpm
+
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
 
@@ -44,10 +46,12 @@ def uniformSourceLightcurveAlgorithm(individual):
         
         #rstar = individual[const.STARRADIUS] # r*, stellar radius in km
         #rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
-        rstar = 1
-        rp = math.atan(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] / (2 * individual[const.DISTANCE]))
-        p = rp / rstar # size ratio, km/km = scalar
-        p2 = math.pow(p,2) # scalar squared = scalar
+        rstar = mpm.mpf('0')
+        starSize = mpm.mpf(individual[const.STARRADIUS])
+        starDist = mpm.mpf(2 * individual[const.DISTANCE])
+        starRatio = mpm.mpf(starSize / starDist)
+
+        rstar = mpm.atan(starRatio)
 
         
         sma = individual[const.ATTRPERPLANET * planetIndex + const.SMA] # km
@@ -86,9 +90,19 @@ def uniformSourceLightcurveAlgorithm(individual):
 
             currentRadius = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
 
-        #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
+            #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
 
             cartesianPosition = ch.calculatePosition(individual, planetIndex, currentRadius, trueAnomaly)
+            
+            rp = mpm.mpf('0')       
+            pSize = mpm.mpf(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS])
+            pDist = mpm.mpf(2 * individual[const.DISTANCE] + cartesianPosition[1])
+            pRatio = mpm.mpf(pSize / pDist)
+
+            rp = mpm.atan(pRatio)
+            
+            p = rp / rstar # size ratio, km/km = scalar
+            p2 = math.pow(p,2) # scalar squared = scalar
 
             collapser = [1,0,1]
             collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]
@@ -96,7 +110,7 @@ def uniformSourceLightcurveAlgorithm(individual):
             # center to center distance between star and planet
             d = math.dist([0,0,0], collapsedPosition)
 
-            if(d > rstar + rp):
+            if(d > rp + rstar):
                 myFlux.append(individual[const.STARBASEFLUX])
                 continue
 
@@ -203,10 +217,7 @@ def validateIndividual(individual):
             #individual[index] = random.uniform(0.1, 0.4)
             individual[index] = 0
         elif (attrIndex == const.INC):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
+            individual[index] = 0
         elif (attrIndex == const.LOAN):
             if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
                 individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]

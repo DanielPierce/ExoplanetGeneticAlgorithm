@@ -20,4 +20,5 @@ def calculatePosition(individual, planet, radius, trueAnomaly):
     posZDot = posX * math.sin(individual[planet * const.ATTRPERPLANET + const.AOP]) * math.sin(individual[planet * const.ATTRPERPLANET + const.INC]) + posY * math.cos(individual[planet * const.ATTRPERPLANET + const.AOP]) * math.sin(individual[planet * const.ATTRPERPLANET + const.INC])
 
     # intertial reference frame, but relative to what? orbital frame has z axis perpendicular to orbital plane and x axis pointing to periapsis of orbit
+    # May have to rotate to meet expected reference frame
     return [posXDot, posYDot, posZDot]

@@ -163,10 +163,11 @@ def getLightCurve():
     global curveOutputFile
     global dataOutputFile
     global numThreads
+    global skippedTimesteps
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:s:")
     except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput> -t <numthreads>')
+        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput> -t <numthreads> -s <skipped timesteps>')
     for opt, arg in opts:
         if opt == '-i':
             inputFile = arg
@@ -176,11 +177,14 @@ def getLightCurve():
             dataOutputFile = arg 
         elif opt == '-t':
             numThreads = int(arg)
+        elif opt == '-s':
+            skippedTimesteps = int(arg)
     
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
     print("Threads : %s" %numThreads)
+    print("skippedTimesteps : %s" %skippedTimesteps)
 
     helpers.targetCurve = lk.read(inputFile)
 
