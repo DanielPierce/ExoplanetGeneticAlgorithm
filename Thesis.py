@@ -65,64 +65,27 @@ def uniformSourceLightcurveAlgorithm(individual):
         
         zeroTime = dateparser.parse(targetCurve.time.iso[0])
 
-        myFlux = []
-        for timeIndex in targetCurve.time.iso:
+        myFlux = [const.STARBASEFLUX for i in range(len(targetCurve.time))]
 
-            currentTime = dateparser.parse(timeIndex)
-            seconds = (currentTime - zeroTime).total_seconds()
-            epochOffsetRadians = seconds / period * 2 * math.pi # s / s * radians = radians
+        baseTimeSteps = [i for i in range(len(targetCurve.time), const.skippedTimesteps)]
+        followUp = []
 
-            currentMeanAnomaly = (meanAnomalyAtEpoch + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
-
-            try:
-                eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(ecc, currentMeanAnomaly) # radians???
-            except:
-                toc = time.perf_counter()
-                #print(f"Planet {planetIndex} eccentric anomaly could not converge at timestep {timeIndex} in {toc - tic:0.4f} seconds")
-                myFlux.append(-1)
-                continue
-                
-            eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
-            
-            #print(f"Planet {planetIndex} eccentric anomaly did converge at timestep {timeIndex}")
-            trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
-            trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
-
-            currentRadius = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
-
-            #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
-
-            cartesianPosition = ch.calculatePosition(individual, planetIndex, currentRadius, trueAnomaly)
-            
-            rp = mpm.mpf('0')       
-            pSize = mpm.mpf(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS])
-            pDist = mpm.mpf(2 * individual[const.DISTANCE] + cartesianPosition[1])
-            pRatio = mpm.mpf(pSize / pDist)
-
-            rp = mpm.atan(pRatio)
-            
-            p = rp / rstar # size ratio, km/km = scalar
-            p2 = math.pow(p,2) # scalar squared = scalar
-
-            collapser = [1,0,1]
-            collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]
-
-            # center to center distance between star and planet
-            d = math.dist([0,0,0], collapsedPosition)
-
-            if(d > rp + rstar):
-                myFlux.append(individual[const.STARBASEFLUX])
-                continue
-
-            z = d / rstar # normalized seperation of centers, km/km = scalar
-            z2 = math.pow(z,2) # scalar squared = scalar
-            result1 = (1 - p2 + z2) / (2 * z) # all scalars so scalar
-            k1 = math.acos(result1)
-            result2 = (p2 + z2 - 1) / (2 * p * z) # all scalars so scalar
-            k0 = math.acos(result2)
-
-            myFlux.append(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux,k0,k1))
+        for i in baseTimeSteps:
+            myFlux[i] = calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux)
+            # if not baseflux, add all timeslots between this and previous to followup
+            # also add timeslots between this and next
+            # once done with this for, remove duplicates from follup and then calculate all those
+            if(myFlux[i] != baseFlux):
+                for x in range(i - const.skippedTimesteps, i):
+                    followUp.append(x)
+                for x in range(i, i + const.skippedTimesteps):
+                    followUp.append(x)
             #print(f"Did timestep in {toc - tic:0.4f} seconds")
+        followUpUnique = list(dict.fromkeys(followUp))
+        for i in followUpUnique:
+            myFlux[i] = calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux)
+        followUps = len(followUpUnique)
+        print(f"needed to follow up on {followUps} timesteps")
         for i in range(len(targetCurve.time)):
             overallFlux[i] = min(overallFlux[i], myFlux[i])
     numRejects = overallFlux.count(-1)
@@ -130,6 +93,61 @@ def uniformSourceLightcurveAlgorithm(individual):
     toc = time.perf_counter()
     print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
     return overallFlux
+
+def calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux):
+    timeIndex = targetCurve.time.iso[i]
+    currentTime = dateparser.parse(timeIndex)
+    seconds = (currentTime - zeroTime).total_seconds()
+    epochOffsetRadians = seconds / period * 2 * math.pi # s / s * radians = radians
+
+    currentMeanAnomaly = (meanAnomalyAtEpoch + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
+
+    try:
+        eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(ecc, currentMeanAnomaly) # radians???
+    except:
+        toc = time.perf_counter()
+        #print(f"Planet {planetIndex} eccentric anomaly could not converge at timestep {timeIndex} in {toc - tic:0.4f} seconds")
+        return -1
+                
+    eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
+            
+    #print(f"Planet {planetIndex} eccentric anomaly did converge at timestep {timeIndex}")
+    trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
+    trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
+
+    currentRadius = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
+
+    #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
+
+    cartesianPosition = ch.calculatePosition(individual, planetIndex, currentRadius, trueAnomaly)
+            
+    rp = mpm.mpf('0')       
+    pSize = mpm.mpf(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS])
+    pDist = mpm.mpf(2 * individual[const.DISTANCE] + cartesianPosition[1])
+    pRatio = mpm.mpf(pSize / pDist)
+
+    rp = mpm.atan(pRatio)
+            
+    p = rp / rstar # size ratio, km/km = scalar
+    p2 = math.pow(p,2) # scalar squared = scalar
+
+    collapser = [1,0,1]
+    collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]
+
+    # center to center distance between star and planet
+    d = math.dist([0,0,0], collapsedPosition)
+
+    if(d > rp + rstar):
+        return individual[const.STARBASEFLUX]
+
+    z = d / rstar # normalized seperation of centers, km/km = scalar
+    z2 = math.pow(z,2) # scalar squared = scalar
+    result1 = (1 - p2 + z2) / (2 * z) # all scalars so scalar
+    k1 = math.acos(result1)
+    result2 = (p2 + z2 - 1) / (2 * p * z) # all scalars so scalar
+    k0 = math.acos(result2)
+
+    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux,k0,k1))
 
 def generateLightcurve(individual):
     myTimes = targetCurve.time

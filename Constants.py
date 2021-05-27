@@ -38,3 +38,5 @@ GRAVITATIONALCONSTANT = 6.674 * math.pow(10, -11) # m^3 kg^-1 s^-2
 STARMASSMIN = 1.898 * math.pow(10,27) * 50 # hypothetical minimum mass of star is 75x the mass of jupiter, went with 50x to include brown dwarfs
 STARRADIUSMIN = STARRADIUSMUTFACTOR * 1000
 STARBASEFLUXMIN = 1000 
+
+skippedTimesteps = 0
