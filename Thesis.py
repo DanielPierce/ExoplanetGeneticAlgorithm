@@ -1,13 +1,12 @@
+from Planet import Planet
 import Constants as const
 from Constants import CONSTANTS
-import CalculationHelpers as ch
 
 import lightkurve as lk
 import numpy as np
 import random
 import statistics
 import math
-import orbital
 
 import dateutil.parser as dateparser
 import time
@@ -41,9 +40,19 @@ def uniformSourceLightcurveAlgorithm(individual):
     tic = time.perf_counter()
     baseFlux = individual[const.STARBASEFLUX]
     overallFlux = [baseFlux for i in range(len(targetCurve.time))]
+    notInRangeSkips = 0
+    inRange = 0
     for planetIndex in range(individual[const.NUMPLANETS]):
         print("on planet %s" %planetIndex)
         
+        thisPlanet = Planet(
+            individual[const.ATTRPERPLANET * planetIndex + const.RADIUS],
+            individual[const.ATTRPERPLANET * planetIndex + const.ECC],
+            individual[const.ATTRPERPLANET * planetIndex + const.SMA],
+            individual[const.ATTRPERPLANET * planetIndex + const.INC],
+            individual[const.ATTRPERPLANET * planetIndex + const.LOAN],
+            individual[const.ATTRPERPLANET * planetIndex + const.AOP],
+            individual[const.ATTRPERPLANET * planetIndex + const.MA])
         #rstar = individual[const.STARRADIUS] # r*, stellar radius in km
         #rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
         rstar = mpm.mpf('0')
@@ -52,40 +61,40 @@ def uniformSourceLightcurveAlgorithm(individual):
         starRatio = mpm.mpf(starSize / starDist)
 
         rstar = mpm.atan(starRatio)
-
-        
-        sma = individual[const.ATTRPERPLANET * planetIndex + const.SMA] # km
-        ecc = individual[const.ATTRPERPLANET * planetIndex + const.ECC] # scalar
-        meanAnomalyAtEpoch = individual[const.ATTRPERPLANET * planetIndex + const.MA] # radians
-        ecc2 = math.pow(ecc,2) # scalar
                                                                                                               
-        a = individual[const.ATTRPERPLANET * planetIndex + const.SMA] * 1000 # semimajor axis in km to m
+        a = thisPlanet.sma * 1000 # semimajor axis in km to m
         mu = const.GRAVITATIONALCONSTANT * individual[const.STARMASS] # m^3 kg^-1 s^-2 * kg = m^3 s^-2
-        period = 2 * math.pi * math.sqrt(math.pow(a, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
+        thisPlanet.CalculatePeriod(mu)
         
         zeroTime = dateparser.parse(targetCurve.time.iso[0])
 
         myFlux = [const.STARBASEFLUX for i in range(len(targetCurve.time))]
-
-        baseTimeSteps = [i for i in range(len(targetCurve.time), const.skippedTimesteps)]
+        timelen = len(targetCurve.time)
+        baseSteps = range(0, len(targetCurve.time),const.skippedTimesteps)
+        baseStepsLen = len(baseSteps)
+        baseTimeSteps = [i for i in range(baseStepsLen)]
         followUp = []
 
         for i in baseTimeSteps:
-            myFlux[i] = calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux)
+            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, individual[const.DISTANCE])
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
             if(myFlux[i] != baseFlux):
+                inRange = inRange + 1
                 for x in range(i - const.skippedTimesteps, i):
                     followUp.append(x)
                 for x in range(i, i + const.skippedTimesteps):
                     followUp.append(x)
+            else:
+                notInRangeSkips = notInRangeSkips + 1
             #print(f"Did timestep in {toc - tic:0.4f} seconds")
         followUpUnique = list(dict.fromkeys(followUp))
         for i in followUpUnique:
-            myFlux[i] = calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux)
+            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, individual[const.DISTANCE])
         followUps = len(followUpUnique)
-        print(f"needed to follow up on {followUps} timesteps")
+        leng = len(baseTimeSteps)
+        print(f"needed to follow up on {followUps} timesteps, had {notInRangeSkips} skips and {inRange} in range out of {leng} timesteps from {timelen} curvelength w stepslen {baseStepsLen} skipping {const.skippedTimesteps} timesteps per")
         for i in range(len(targetCurve.time)):
             overallFlux[i] = min(overallFlux[i], myFlux[i])
     numRejects = overallFlux.count(-1)
@@ -94,36 +103,22 @@ def uniformSourceLightcurveAlgorithm(individual):
     print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
     return overallFlux
 
-def calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, individual, planetIndex, rstar, baseFlux):
+def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
     timeIndex = targetCurve.time.iso[i]
     currentTime = dateparser.parse(timeIndex)
     seconds = (currentTime - zeroTime).total_seconds()
-    epochOffsetRadians = seconds / period * 2 * math.pi # s / s * radians = radians
 
-    currentMeanAnomaly = (meanAnomalyAtEpoch + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
+    trueAnomaly = thisPlanet.CalculateCurrentTrueAnomaly(seconds)
 
-    try:
-        eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(ecc, currentMeanAnomaly) # radians???
-    except:
-        toc = time.perf_counter()
-        #print(f"Planet {planetIndex} eccentric anomaly could not converge at timestep {timeIndex} in {toc - tic:0.4f} seconds")
-        return -1
-                
-    eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
-            
-    #print(f"Planet {planetIndex} eccentric anomaly did converge at timestep {timeIndex}")
-    trueAnomaly = 2 * math.atan(math.sqrt( (1 + ecc)/(1 - ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
-    trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
+    currentRadius = thisPlanet.CalculateAngularSize(trueAnomaly)
 
-    currentRadius = sma * (1 - ecc2) / (1 + ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
-
-    #angularMomentum = math.sqrt(mu * sma * (1-math.pow(math.e,2)))
-
-    cartesianPosition = ch.calculatePosition(individual, planetIndex, currentRadius, trueAnomaly)
+    cartesianPosition = thisPlanet.CalculateCartesianPosition(trueAnomaly)
+    if(cartesianPosition[1] < 0):
+        return baseFlux
             
     rp = mpm.mpf('0')       
-    pSize = mpm.mpf(individual[const.ATTRPERPLANET * planetIndex + const.RADIUS])
-    pDist = mpm.mpf(2 * individual[const.DISTANCE] + cartesianPosition[1])
+    pSize = mpm.mpf(thisPlanet.radius)
+    pDist = mpm.mpf(2 * distance + cartesianPosition[1])
     pRatio = mpm.mpf(pSize / pDist)
 
     rp = mpm.atan(pRatio)
@@ -138,7 +133,7 @@ def calculateTimestep(i, zeroTime, period, meanAnomalyAtEpoch, ecc, sma, ecc2, i
     d = math.dist([0,0,0], collapsedPosition)
 
     if(d > rp + rstar):
-        return individual[const.STARBASEFLUX]
+        return baseFlux
 
     z = d / rstar # normalized seperation of centers, km/km = scalar
     z2 = math.pow(z,2) # scalar squared = scalar
@@ -211,11 +206,10 @@ def validateIndividual(individual):
     for index in range(len(individual)):
         attrIndex = index % const.ATTRPERPLANET
         if (index == const.NUMPLANETS):
-            individual[index] = random.randint(0, const.MAXPLANETS)
-            #individual[index] = 3
+            #individual[index] = random.randint(0, const.MAXPLANETS)
+            individual[index] = 3
         elif (index == const.STARRADIUS):
-            if(individual[index] <= const.STARRADIUSMIN):
-                individual[index] = const.STARRADIUSMIN
+            individual[index] = const.STARRADIUSMIN * 10000000
         elif (index == const.STARMASS):
             if(individual[index] <= const.STARMASSMIN):
                 individual[index] = const.STARMASSMIN
@@ -225,7 +219,7 @@ def validateIndividual(individual):
         elif (index == const.DISTANCE):
             individual[index] = 9460730000000 * 10 # 10 lightyears
         elif (attrIndex == const.RADIUS):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MIN])
+            individual[index] = CONSTANTS[attrIndex][const.MAX]
         elif (attrIndex == const.SMA):
             if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
                 individual[index] = CONSTANTS[attrIndex][const.MAX]
