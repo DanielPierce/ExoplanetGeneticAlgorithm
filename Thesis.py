@@ -164,8 +164,35 @@ def evalOneMax(individual):
         if(myLightCurve.flux[i] == -1):
             absDiff[i] = 10000
             numCounted += 1
+    # instead of checking only in a specific timestep, order timesteps by brightness and then do a distance function to see how far in time + brightness the dimmest timestep is, then next, etc, where fitness is sum of distances and trying to minimize that distance
     print(f"In eval, counted {numCounted}")
     return [statistics.mean(absDiff)]
+
+def sortLightcurves(myLightCurve):
+    targetFlux = targetCurve.flux.value.tolist()
+    targetTimes = targetCurve.time.iso.tolist()
+    currentFlux = myLightCurve.flux.value.tolist()
+    currentTimes = myLightCurve.time.iso.tolist()
+
+    targetSort = sorted(zip(targetFlux,targetTimes), key=lambda i: i[1], reverse=True)
+    currentSort = sorted(zip(currentFlux,currentTimes), key=lambda i: i[1], reverse=True)
+
+    return targetSort,currentSort
+    
+
+def evalOneMaxDist(individual):
+    myLightCurve = generateLightcurve(individual)
+    if(myLightCurve is None):
+        return 0
+    targetSort, currentSort = sortLightcurves(myLightCurve)
+    sumOfDists = 0
+    for i in range(len(targetSort)):
+        targetFlux, targetTime = targetSort[i]
+        currentFlux, currentTime = currentSort[i]
+        fluxDist = targetFlux - currentFlux
+        timeDist = dateparser.parse(targetTime) - dateparser.parse(currentTime)
+        sumOfDists = sumOfDists + math.sqrt(fluxDist * fluxDist + timeDist.total_seconds() * timeDist.total_seconds())
+    return sumOfDists
 
 def lerp(a,b,c):
     return (c * b) + ((1-c) * a)
