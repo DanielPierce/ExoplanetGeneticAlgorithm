@@ -174,9 +174,8 @@ def sortLightcurves(myLightCurve):
     currentFlux = myLightCurve.flux.value.tolist()
     currentTimes = myLightCurve.time.iso.tolist()
 
-    targetSort = sorted(zip(targetFlux,targetTimes), key=lambda i: i[1], reverse=True)
-    currentSort = sorted(zip(currentFlux,currentTimes), key=lambda i: i[1], reverse=True)
-
+    targetSort = sorted(zip(targetFlux,targetTimes), key=lambda i: i[0], reverse=True)
+    currentSort = sorted(zip(currentFlux,currentTimes), key=lambda i: i[0], reverse=True)
     return targetSort,currentSort
     
 
