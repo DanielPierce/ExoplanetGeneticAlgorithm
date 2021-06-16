@@ -23,11 +23,15 @@ def generateRandomLightCurve(individual):
     myErr = [0 * targetCurve.flux_err.unit for i in range(len(myTimes))]
     return lk.LightCurve(time=myTimes, flux=myFlux, flux_err=myErr)
 
-def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f, k0, k1):
+def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
     if(1 + p < z):
         return 0
     elif(abs(1 - p) < z and z <= 1 + p):
-        return (1 / math.pi) * ( p2* k0 + k1 - math.sqrt((4 * z2 - math.pow(1 + z2 - p2,2)) / 4))
+        result1 = (1 - p2 + z2) / (2 * z)
+        k1 = math.acos(result1)
+        result2 = (p2 + z2 - 1) / (2 * p * z)
+        k0 = math.acos(result2)
+        return f * (1 / math.pi) * ( p2* k0 + k1 - math.sqrt((4 * z2 - math.pow(1 + z2 - p2,2)) / 4))
     elif(z <= 1-p):
         return math.pow(p,2)
     elif(z <= p-1):
@@ -134,12 +138,8 @@ def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
 
     z = d / rstar
     z2 = math.pow(z,2)
-    result1 = (1 - p2 + z2) / (2 * z)
-    k1 = math.acos(result1)
-    result2 = (p2 + z2 - 1) / (2 * p * z)
-    k0 = math.acos(result2)
 
-    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux,k0,k1))
+    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux))
 
 def getAngularSizeFromSizeAndDist(size, distance):
     angularSize = mpm.mpf('0')
