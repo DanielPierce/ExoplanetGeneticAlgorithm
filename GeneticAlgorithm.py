@@ -21,6 +21,8 @@ inputFile = ""
 curveOutputFile = ""
 dataOutputFile = ""
 numThreads = 0
+numIndividuals = 0
+numGenerations = 0
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -47,7 +49,7 @@ def runGA():
     threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
 
 
-    pop = toolbox.population(n=100)
+    pop = toolbox.population(n=numIndividuals)
     tic = time.perf_counter()
     tempPop = list(map(helpers.validateIndividual, pop))
     pop = tempPop
@@ -74,7 +76,7 @@ def runGA():
     g = 0
     
     # Begin the evolution
-    while g < 100:
+    while g < numGenerations:
         tic = time.perf_counter()
         # A new generation
         g = g + 1
@@ -164,11 +166,13 @@ def getLightCurve():
     global curveOutputFile
     global dataOutputFile
     global numThreads
+    global numIndividuals
+    global numGenerations
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:s:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:s:p:g:")
     except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutput> -d <dataoutput> -t <numthreads> -s <skipped timesteps>')
+        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutputfile> -d <dataoutputfile> -t <number of threads> -s <skipped timesteps> -p <population size> -g <number of generations>')
     for opt, arg in opts:
         if opt == '-i':
             inputFile = arg
@@ -180,12 +184,18 @@ def getLightCurve():
             numThreads = int(arg)
         elif opt == '-s':
             const.skippedTimesteps = int(arg)
+        elif opt == '-p':
+            numIndividuals = int(arg)
+        elif opt == '-g':
+            numGenerations = int(arg)
     
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
     print("Threads : %s" %numThreads)
     print("skippedTimesteps : %s" %const.skippedTimesteps)
+    print("Population : %s" %numIndividuals)
+    print("Generations : %s" %numGenerations)
 
     helpers.targetCurve = lk.read(inputFile)
 
