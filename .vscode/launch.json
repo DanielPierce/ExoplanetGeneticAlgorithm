@@ -14,7 +14,7 @@
                 "-i", "DefaultFileTIC307210830C.fits",
                 "-c", "OutputCurve.fits",
                 "-d", "OutputData.txt",
-                "-t", "4",
+                "-t", "1",
                 "-s", "30",
                 "-g", "25",
                 "-p", "12"],

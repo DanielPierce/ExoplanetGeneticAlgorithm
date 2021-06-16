@@ -41,24 +41,25 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
-def initializeThreads(target):
+def initializeThreads(target, timesteps):
     helpers.targetCurve = target
+    const.skippedTimesteps = timesteps
 
 def runGA():
     veryBeginning = time.perf_counter()
-    threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
+    threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve, const.skippedTimesteps])
 
 
     pop = toolbox.population(n=numIndividuals)
     tic = time.perf_counter()
-    tempPop = list(map(helpers.validateIndividual, pop))
+    tempPop = list(threadPool.map(helpers.validateIndividual, pop))
     pop = tempPop
     toc = time.perf_counter()
     print(f"Validated individuals in {toc - tic:0.4f} seconds")
 
     # Evaluate the entire populationprint("first fitness")
     tic = time.perf_counter()
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = list(threadPool.map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 

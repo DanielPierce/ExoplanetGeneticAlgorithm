@@ -43,7 +43,9 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
 def uniformSourceLightcurveAlgorithm(individual):
     tic = time.perf_counter()
     baseFlux = individual[const.STARBASEFLUX]
+    print("before overallflux")
     overallFlux = [baseFlux for i in range(len(targetCurve.time))]
+    print("after overall flux")
     notInRangeSkips = 0
     inRange = 0
     for planetIndex in range(individual[const.NUMPLANETS]):
@@ -71,10 +73,9 @@ def uniformSourceLightcurveAlgorithm(individual):
         thisPlanet.CalculatePeriod(mu)
         
         zeroTime = dateparser.parse(targetCurve.time.iso[0])
-
         myFlux = [const.STARBASEFLUX for i in range(len(targetCurve.time))]
         timelen = len(targetCurve.time)
-        baseSteps = range(0, len(targetCurve.time),const.skippedTimesteps)
+        baseSteps = range(0, len(targetCurve.time), const.skippedTimesteps)
         baseStepsLen = len(baseSteps)
         baseTimeSteps = [i for i in range(baseStepsLen)]
         followUp = []
@@ -196,7 +197,7 @@ def evalOneMaxDist(individual):
         fluxDist = targetFlux - currentFlux
         timeDist = dateparser.parse(targetTime) - dateparser.parse(currentTime)
         sumOfDists = sumOfDists + math.sqrt(fluxDist * fluxDist + timeDist.total_seconds() * timeDist.total_seconds())
-    return sumOfDists
+    return [sumOfDists]
 
 def lerp(a,b,c):
     return (c * b) + ((1-c) * a)
