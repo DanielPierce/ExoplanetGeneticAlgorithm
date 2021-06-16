@@ -116,12 +116,7 @@ def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
     if(cartesianPosition[1] < 0):
         return baseFlux
             
-    rp = mpm.mpf('0')       
-    pSize = mpm.mpf(thisPlanet.radius)
-    pDist = mpm.mpf(2 * distance + cartesianPosition[1])
-    pRatio = mpm.mpf(pSize / pDist)
-
-    rp = mpm.atan(pRatio)
+    rp = getAngularSizeFromSizeAndDist(thisPlanet.radius, 2 * distance + cartesianPosition[1])
             
     p = rp / rstar # size ratio, km/km = scalar
     p2 = math.pow(p,2) # scalar squared = scalar
@@ -130,19 +125,29 @@ def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
     collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]
 
     # center to center distance between star and planet
-    d = math.dist([0,0,0], collapsedPosition)
+    cartesianDist = math.dist([0,0,0], collapsedPosition)
+
+    d = getAngularSizeFromSizeAndDist(cartesianDist, distance)
 
     if(d > rp + rstar):
         return baseFlux
 
-    z = d / rstar # normalized seperation of centers, km/km = scalar
-    z2 = math.pow(z,2) # scalar squared = scalar
-    result1 = (1 - p2 + z2) / (2 * z) # all scalars so scalar
+    z = d / rstar
+    z2 = math.pow(z,2)
+    result1 = (1 - p2 + z2) / (2 * z)
     k1 = math.acos(result1)
-    result2 = (p2 + z2 - 1) / (2 * p * z) # all scalars so scalar
+    result2 = (p2 + z2 - 1) / (2 * p * z)
     k0 = math.acos(result2)
 
     return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux,k0,k1))
+
+def getAngularSizeFromSizeAndDist(size, distance):
+    angularSize = mpm.mpf('0')
+    trueSize = mpm.mpf(size)
+    trueDist = mpm.mpf(distance)
+    trueRatio = mpm.mpf(trueSize / trueDist)
+
+    return mpm.atan(trueRatio)
 
 def generateLightcurve(individual):
     myTimes = targetCurve.time
