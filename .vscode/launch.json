@@ -15,7 +15,7 @@
                 "-c", "OutputCurve.fits",
                 "-d", "OutputData.txt",
                 "-t", "4",
-                "-s", "29"],
+                "-s", "3"],
             "console": "integratedTerminal"
         }
     ]

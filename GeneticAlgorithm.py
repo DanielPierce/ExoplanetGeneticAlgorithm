@@ -34,7 +34,7 @@ toolbox.register("individual", tools.initRepeat, creator.Individual,
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-toolbox.register("evaluate", helpers.evalOneMax)
+toolbox.register("evaluate", helpers.evalOneMaxDist)
 toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation, indpb=0.05)
 toolbox.register("select", tools.selTournament, tournsize=3)
@@ -47,7 +47,7 @@ def runGA():
     threadPool = mp.Pool(numThreads, initializeThreads, [helpers.targetCurve])
 
 
-    pop = toolbox.population(n=1)
+    pop = toolbox.population(n=100)
     tic = time.perf_counter()
     tempPop = list(map(helpers.validateIndividual, pop))
     pop = tempPop
@@ -74,7 +74,7 @@ def runGA():
     g = 0
     
     # Begin the evolution
-    while g < 15:
+    while g < 100:
         tic = time.perf_counter()
         # A new generation
         g = g + 1
@@ -141,6 +141,7 @@ def saveResults(pop):
     global inputFile
     global curveOutputFile
     global dataOutputFile
+    
 
     if os.path.exists(curveOutputFile):
         os.remove(curveOutputFile)
@@ -163,7 +164,7 @@ def getLightCurve():
     global curveOutputFile
     global dataOutputFile
     global numThreads
-    global skippedTimesteps
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:s:")
     except getopt.GetoptError:
@@ -178,13 +179,13 @@ def getLightCurve():
         elif opt == '-t':
             numThreads = int(arg)
         elif opt == '-s':
-            skippedTimesteps = int(arg)
+            const.skippedTimesteps = int(arg)
     
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
     print("Threads : %s" %numThreads)
-    print("skippedTimesteps : %s" %skippedTimesteps)
+    print("skippedTimesteps : %s" %const.skippedTimesteps)
 
     helpers.targetCurve = lk.read(inputFile)
 
