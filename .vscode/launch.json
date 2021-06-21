@@ -14,10 +14,10 @@
                 "-i", "DefaultFileTIC307210830C.fits",
                 "-c", "OutputCurve.fits",
                 "-d", "OutputData.txt",
-                "-t", "1",
+                "-t", "4",
                 "-s", "30",
-                "-g", "25",
-                "-p", "12"],
+                "-g", "100",
+                "-p", "60"],
             "console": "integratedTerminal"
         }
     ]
