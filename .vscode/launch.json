@@ -4,20 +4,42 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "name": "Run Viewer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/viewer.py",
+            "args": [
+                "-i",
+                "DefaultFileTIC307210830C.fits",
+                "-c",
+                "LongOutputCurve.fits",
+                "-d",
+                "LongOutputData.txt"
+            ],
+            "console": "integratedTerminal"
+        },
         {
             "name": "Run GA",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/GeneticAlgorithm.py",
             "args": [
-                "-i", "DefaultFileTIC307210830C.fits",
-                "-c", "OutputCurve.fits",
-                "-d", "OutputData.txt",
-                "-t", "4",
-                "-s", "30",
-                "-g", "100",
-                "-p", "60"],
+                "-i",
+                "DefaultFileTIC307210830C.fits",
+                "-c",
+                "randomized.fits",
+                "-d",
+                "randomized.txt",
+                "-t",
+                "4",
+                "-s",
+                "30",
+                "-g",
+                "75",
+                "-p",
+                "60"
+            ],
             "console": "integratedTerminal"
         }
     ]

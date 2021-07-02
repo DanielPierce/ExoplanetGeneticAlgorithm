@@ -43,13 +43,11 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
 def uniformSourceLightcurveAlgorithm(individual):
     tic = time.perf_counter()
     baseFlux = individual[const.STARBASEFLUX]
-    print("before overallflux")
     overallFlux = [baseFlux for i in range(len(targetCurve.time))]
-    print("after overall flux")
     notInRangeSkips = 0
     inRange = 0
     for planetIndex in range(individual[const.NUMPLANETS]):
-        print("on planet %s" %planetIndex)
+        #print("on planet %s" %planetIndex)
         
         thisPlanet = Planet(
             individual[const.ATTRPERPLANET * planetIndex + const.RADIUS],
@@ -99,13 +97,13 @@ def uniformSourceLightcurveAlgorithm(individual):
             myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, individual[const.DISTANCE])
         followUps = len(followUpUnique)
         leng = len(baseTimeSteps)
-        print(f"needed to follow up on {followUps} timesteps, had {notInRangeSkips} skips and {inRange} in range out of {leng} timesteps from {timelen} curvelength w stepslen {baseStepsLen} skipping {const.skippedTimesteps} timesteps per")
+        #print(f"needed to follow up on {followUps} timesteps, had {notInRangeSkips} skips and {inRange} in range out of {leng} timesteps from {timelen} curvelength w stepslen {baseStepsLen} skipping {const.skippedTimesteps} timesteps per")
         for i in range(len(targetCurve.time)):
             overallFlux[i] = min(overallFlux[i], myFlux[i])
     numRejects = overallFlux.count(-1)
     steps = len(overallFlux)
     toc = time.perf_counter()
-    print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
+    #print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
     return overallFlux
 
 def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
@@ -206,29 +204,30 @@ def randomizeAttr(currentValue, mutFactor):
     return currentValue + lerp(-1 * mutFactor, mutFactor, random.random())
 
 def mutation(individual, indpb):
+    # have probability to mutate each attribute, with prob such that 2 are mutate per
     indexToMutate = random.randint(0,len(individual)-1)
     attrIndex = indexToMutate % const.ATTRPERPLANET
     if(indexToMutate == const.NUMPLANETS):
-        print("mutating num planets")
+        #print("mutating num planets")
         individual[indexToMutate] = random.randint(0, const.MAXPLANETS)
     elif (indexToMutate == const.STARRADIUS):
-        print("mutating star radius")
+        #print("mutating star radius")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARRADIUSMUTFACTOR)
         if(individual[indexToMutate] <= 10000):
             individual[indexToMutate] = 10000
     elif (indexToMutate == const.STARMASS):
-        print("mutating star mass")
+        #print("mutating star mass")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARMASSMUTFACTOR)
         if(individual[indexToMutate] <= const.STARMASSMIN):
             individual[indexToMutate] = const.STARMASSMIN
     elif (indexToMutate == const.STARBASEFLUX):
-        print("mutating base flux")
+        #print("mutating base flux")
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARBASEFLUXMUTFACTOR)
         if(individual[indexToMutate] < 0):
             individual[indexToMutate] = 0
     else:
         individual[indexToMutate] = randomizeAttr(individual[indexToMutate], CONSTANTS[attrIndex][const.MUTFACTOR])
-        print(f"mutating attribute {indexToMutate}")
+        #print(f"mutating attribute {indexToMutate}")
         if(individual[indexToMutate] > CONSTANTS[attrIndex][const.MAX]):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MAX]
         if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
@@ -238,10 +237,10 @@ def validateIndividual(individual):
     for index in range(len(individual)):
         attrIndex = index % const.ATTRPERPLANET
         if (index == const.NUMPLANETS):
-            #individual[index] = random.randint(0, const.MAXPLANETS)
-            individual[index] = 3
+            individual[index] = random.randint(0, const.MAXPLANETS)
+            #individual[index] = 3
         elif (index == const.STARRADIUS):
-            individual[index] = const.STARRADIUSMIN * 10000000
+            individual[index] = const.STARRADIUSMIN * random.randint(1000000,1000000000)
         elif (index == const.STARMASS):
             if(individual[index] <= const.STARMASSMIN):
                 individual[index] = const.STARMASSMIN
@@ -249,7 +248,7 @@ def validateIndividual(individual):
             if(individual[index] < const.STARBASEFLUXMIN):
                 individual[index] = const.STARBASEFLUXMIN
         elif (index == const.DISTANCE):
-            individual[index] = 9460730000000 * 10 # 10 lightyears
+            individual[index] = 9460730000000 * random.random(5,500) # 5-500 lightyears
         elif (attrIndex == const.RADIUS):
             individual[index] = CONSTANTS[attrIndex][const.MAX]
         elif (attrIndex == const.SMA):
@@ -284,26 +283,28 @@ def randomizeIndividual(individual):
         attrIndex = index % const.ATTRPERPLANET
         if (index == const.NUMPLANETS):
             individual[index] = random.randint(0, const.MAXPLANETS)
-            #individual[index] = 3
         elif (index == const.STARRADIUS):
-            individual[index] = random.randint(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
+            individual[index] = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
         elif (index == const.STARMASS):
-            individual[index] = random.randint(const.STARMASSMIN, const.STARMASSMIN * 100)
+            individual[index] = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
         elif (index == const.STARBASEFLUX):
-            individual[index] = random.randint(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
+            individual[index] = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
+        elif (index == const.STARBASEFLUX):
+            individual[index] = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
         elif (attrIndex == const.RADIUS):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])
+            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])
         elif (attrIndex == const.SMA):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
         elif (attrIndex == const.ECC):
             individual[index] = random.uniform(0.1, 0.4)
         elif (attrIndex == const.INC):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            #individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            individual[index] = 0
         elif (attrIndex == const.LOAN):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
         elif (attrIndex == const.AOP):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
         elif (attrIndex == const.MA):
-            individual[index] = random.randint(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
     return individual
 
