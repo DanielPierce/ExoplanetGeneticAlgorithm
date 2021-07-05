@@ -289,7 +289,7 @@ def randomizeIndividual(individual):
             individual[index] = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
         elif (index == const.STARBASEFLUX):
             individual[index] = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
-        elif (index == const.STARBASEFLUX):
+        elif (index == const.DISTANCE):
             individual[index] = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
         elif (attrIndex == const.RADIUS):
             individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])

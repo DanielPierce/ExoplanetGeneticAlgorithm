@@ -15,11 +15,19 @@ import time
 
 import matplotlib
 
+import csv
+import openpyxl as xl
+from openpyxl.formatting.rule import ColorScaleRule
+
+
+
 
 def getInputs():
     global inputFile
     global curveOutputFile
     global dataOutputFile
+    global populationOutputFile
+    global populationOutputExcel
 
     #try:
     #    opts, args = getopt.getopt(sys.argv[1:], "i:c:d:")
@@ -34,13 +42,16 @@ def getInputs():
     #        dataOutputFile = arg 
     
     inputFile = "DefaultFileTIC307210830C.fits"
-    curveOutputFile = "randomized.fits"
-    dataOutputFile = "randomized.txt"
-    
+    curveOutputFile = "longnlotscurve.fits"
+    dataOutputFile = "longnlotsdata.txt"
+    populationOutputFile = "longnlotspop.csv"
+    populationOutputExcel = "longnlots.xlsx"
+
     print('-------------------------------------------------------')
     print("Input: %s" %inputFile)
     print("Curve: %s" %curveOutputFile)
     print("Data : %s" %dataOutputFile)
+    print("pop : %s" %populationOutputFile)
     const.skippedTimesteps = 1
 
 
@@ -84,6 +95,59 @@ def openFiles():
     print("Fitness std:......................... %s" %individualStrings[statsVars+1])
     print("Min fitness:......................... %s" %individualStrings[statsVars+2])
     print("Max fitness:......................... %s" %individualStrings[statsVars+3])
+
+    wb = xl.Workbook()
+    ws = wb.active
+    for planet in range(const.MAXPLANETS):
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.RADIUS + 1)
+        cell.value = 'Radius (km)'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.ECC + 1)
+        cell.value = 'Eccentricity'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.SMA + 1)
+        cell.value = 'Semi-major Axis (km)'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.INC + 1)
+        cell.value = 'Inclination (rads)'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.LOAN + 1)
+        cell.value = 'Long. of Asc. Node (rads)'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.AOP + 1)
+        cell.value = 'Arg. of Periapse (rads)'
+        cell = ws.cell(row=1,column=planet * const.ATTRPERPLANET + const.MA + 1)
+        cell.value = 'Mean Anomaly (rads)'
+    
+    
+    cell = ws.cell(row=1,column=const.NUMPLANETS + 1)
+    cell.value = 'Num. of Planets'
+    cell = ws.cell(row=1,column=const.STARRADIUS + 1)
+    cell.value = 'Star Radius (km)'
+    cell = ws.cell(row=1,column=const.STARMASS + 1)
+    cell.value = 'Star Mass (kg)'
+    cell = ws.cell(row=1,column=const.STARBASEFLUX + 1)
+    cell.value = 'Star Base Flux (e/s)'
+    cell = ws.cell(row=1,column=const.DISTANCE + 1)
+    cell.value = 'Star Distance (km)'
+
+    numRows = 1
+    rowlen = 0
+    with open(populationOutputFile) as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            rowNumbers = list(map(float,row))
+            rowlen = len(row)
+            ws.append(rowNumbers)
+            numRows = numRows + 1
+
+    for i in range(1,rowlen+1):
+        cell = ws.cell(row=numRows+2,column=i)
+        cell.value = '=AVERAGE({0}2:{0}{1})'.format(xl.utils.cell.get_column_letter(i), numRows)
+        cell = ws.cell(row=numRows+3,column=i)
+        cell.value = '=STDEV({0}2:{0}{1})'.format(xl.utils.cell.get_column_letter(i), numRows)
+        cell = ws.cell(row=numRows+4,column=i)
+        cell.value = '={0}{1} / {0}{2}'.format(xl.utils.cell.get_column_letter(i), numRows+3, numRows+2)
+
+    ws.conditional_formatting.add('A{0}:{1}{0}'.format(numRows+4,xl.utils.cell.get_column_letter(rowlen+1)), ColorScaleRule(start_type='min', start_color='FFAAAA', end_type='max', end_color='AAFFAA'))
+
+    wb.save(populationOutputExcel)
+    print("saved")
 
     result = helpers.generateLightcurve(individual)
     result.plot()

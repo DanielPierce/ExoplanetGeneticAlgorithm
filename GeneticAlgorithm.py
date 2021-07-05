@@ -23,6 +23,7 @@ import multiprocessing as mp
 inputFile = ""
 curveOutputFile = ""
 dataOutputFile = ""
+populationOutputFile = ""
 numThreads = 0
 numIndividuals = 0
 numGenerations = 0
@@ -205,27 +206,31 @@ def saveResults(pop):
     dataFile.close()
     #reread = lk.read('testoutput.txt')
     #reread2 = lk.read(curveOutputFile)
-
+    popArray = np.array(pop)
+    print(len(pop))
+    np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
+    np.savetxt(populationOutputFile, popArray, delimiter=',')
 
 def getLightCurve():
     global inputFile
     global curveOutputFile
     global dataOutputFile
+    global populationOutputFile
     global numThreads
     global numIndividuals
     global numGenerations
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:c:d:t:s:p:g:")
+        opts, args = getopt.getopt(sys.argv[1:], "i:o:t:s:p:g:")
     except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -c <lightcurveoutputfile> -d <dataoutputfile> -t <number of threads> -s <skipped timesteps> -p <population size> -g <number of generations>')
+        print('GeneticAlgorithm.py -i <inputfile> -o <outputfilesprefix> -t <number of threads> -s <skipped timesteps> -p <population size> -g <number of generations>')
     for opt, arg in opts:
         if opt == '-i':
             inputFile = arg
-        elif opt == '-c':
-            curveOutputFile = arg
-        elif opt == '-d':
-            dataOutputFile = arg 
+        elif opt == '-o':
+            curveOutputFile = arg + "curve.txt"
+            dataOutputFile = arg + "data.txt" 
+            populationOutputFile = arg + "pop.csv"
         elif opt == '-t':
             numThreads = int(arg)
         elif opt == '-s':
