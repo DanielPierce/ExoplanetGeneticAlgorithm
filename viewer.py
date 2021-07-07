@@ -41,11 +41,13 @@ def getInputs():
     #    elif opt == '-d':
     #        dataOutputFile = arg 
     
+    prefix = "testing"
+
     inputFile = "DefaultFileTIC307210830C.fits"
-    curveOutputFile = "longnlotscurve.fits"
-    dataOutputFile = "longnlotsdata.txt"
-    populationOutputFile = "longnlotspop.csv"
-    populationOutputExcel = "longnlots.xlsx"
+    curveOutputFile = prefix + "curve.fits"
+    dataOutputFile = prefix + "data.txt"
+    populationOutputFile = prefix + "pop.csv"
+    populationOutputExcel = prefix + ".xlsx"
 
     print('-------------------------------------------------------')
     print("Input: %s" %inputFile)

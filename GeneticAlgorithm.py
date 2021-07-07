@@ -29,8 +29,8 @@ numIndividuals = 0
 numGenerations = 0
 timings = []
 
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMax)
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
 # Attribute generator 
@@ -43,7 +43,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 toolbox.register("evaluate", helpers.evalOneMaxDist)
 toolbox.register("mate", tools.cxTwoPoint)
-toolbox.register("mutate", helpers.mutation, indpb=0.05)
+toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 def initializeThreads(target, timesteps):
@@ -87,27 +87,33 @@ def runGA():
         tic = time.perf_counter()
         # A new generation
         g = g + 1
-        print("-- Generation %i --" % g)
+        print(f"-- Generation {g}/{numGenerations} --")
         # Select the next generation individuals
         # add some sort of elitism or hall of fame
+        startSelect = time.perf_counter()
         offspring = toolbox.select(pop, len(pop))
         # Clone the selected individuals
         offspring = list(map(toolbox.clone, offspring))       
+        endSelect = time.perf_counter()
+        startCX = time.perf_counter()
         # Apply crossover and mutation on the offspring
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
             if random.random() < CXPB:
                 toolbox.mate(child1, child2)
                 del child1.fitness.values
                 del child2.fitness.values
-
+        endCX = time.perf_counter()
+        startMutate = time.perf_counter()
         for mutant in offspring:
             if random.random() < MUTPB:
                 toolbox.mutate(mutant)
                 del mutant.fitness.values
-        
+        endMutate = time.perf_counter()
         # Evaluate the individuals with an invalid fitness
+        startEval = time.perf_counter()
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
         fitnesses = threadPool.map(toolbox.evaluate, invalid_ind)
+        endEval = time.perf_counter()
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
         # shuffle positions of population bc of positional crossover
@@ -137,7 +143,12 @@ def runGA():
         gensLeft = numGenerations - g
         remainingSeconds = gensLeft * avg
         estimate = datetime.now() + timedelta(seconds=remainingSeconds)
+        select = endSelect-startSelect
+        cx = endCX-startCX
+        mut = endMutate-startMutate
+        evalu = endEval-startEval
         print(f"Generation {g} complete in {thisGen:0.4f} seconds, averaging {avg:0.1f} seconds per")
+        print(f"Selection: {select}s, CX: {cx}s, Mut: {mut}s, Eval: {evalu}s")
         print(f"Estimate {remainingSeconds} seconds remaining, done at {estimate}")
         
     veryEnd = time.perf_counter()
@@ -252,6 +263,7 @@ def getLightCurve():
 
 def main():
     allToldStart = time.perf_counter()
+    print(f"Start time: {datetime.now()}")
     getLightCurve()
     pop = runGA()
     printResults(pop)

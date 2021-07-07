@@ -1,6 +1,7 @@
+from PlanetarySystem import PlanetarySystem
 from Planet import Planet
 import Constants as const
-from Constants import CONSTANTS
+from Constants import ATTRSPERMUTATION, CONSTANTS
 
 import lightkurve as lk
 import numpy as np
@@ -41,45 +42,26 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
         raise ValueError(txt.format(dval = d, rpval = rp))
 
 def uniformSourceLightcurveAlgorithm(individual):
-    tic = time.perf_counter()
     baseFlux = individual[const.STARBASEFLUX]
     overallFlux = [baseFlux for i in range(len(targetCurve.time))]
     notInRangeSkips = 0
     inRange = 0
-    for planetIndex in range(individual[const.NUMPLANETS]):
-        #print("on planet %s" %planetIndex)
+    thisSystem = PlanetarySystem(individual)
+    for planetIndex in range(thisSystem.numActivePlanets):
         
-        thisPlanet = Planet(
-            individual[const.ATTRPERPLANET * planetIndex + const.RADIUS],
-            individual[const.ATTRPERPLANET * planetIndex + const.ECC],
-            individual[const.ATTRPERPLANET * planetIndex + const.SMA],
-            individual[const.ATTRPERPLANET * planetIndex + const.INC],
-            individual[const.ATTRPERPLANET * planetIndex + const.LOAN],
-            individual[const.ATTRPERPLANET * planetIndex + const.AOP],
-            individual[const.ATTRPERPLANET * planetIndex + const.MA])
-        #rstar = individual[const.STARRADIUS] # r*, stellar radius in km
-        #rp = individual[const.ATTRPERPLANET * planetIndex + const.RADIUS] # rp, planetary radius in km
-        rstar = mpm.mpf('0')
-        starSize = mpm.mpf(individual[const.STARRADIUS])
-        starDist = mpm.mpf(2 * individual[const.DISTANCE])
-        starRatio = mpm.mpf(starSize / starDist)
-
-        rstar = mpm.atan(starRatio)
+        thisPlanet = thisSystem.GetPlanet(planetIndex)
+       
+        rstar = thisSystem.CalculateStarAngularSize()
                                                                                                               
-        a = thisPlanet.sma * 1000 # semimajor axis in km to m
-        mu = const.GRAVITATIONALCONSTANT * individual[const.STARMASS] # m^3 kg^-1 s^-2 * kg = m^3 s^-2
-        thisPlanet.CalculatePeriod(mu)
+        thisSystem.CalculatePlanetaryPeriod(planetIndex)
         
         zeroTime = dateparser.parse(targetCurve.time.iso[0])
-        myFlux = [const.STARBASEFLUX for i in range(len(targetCurve.time))]
-        timelen = len(targetCurve.time)
-        baseSteps = range(0, len(targetCurve.time), const.skippedTimesteps)
-        baseStepsLen = len(baseSteps)
-        baseTimeSteps = [i for i in range(baseStepsLen)]
+        myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
+        baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
         followUp = []
 
-        for i in baseTimeSteps:
-            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, individual[const.DISTANCE])
+        for i in baseStepIndices:
+            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, thisSystem.star)
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
@@ -91,22 +73,18 @@ def uniformSourceLightcurveAlgorithm(individual):
                     followUp.append(x)
             else:
                 notInRangeSkips = notInRangeSkips + 1
-            #print(f"Did timestep in {toc - tic:0.4f} seconds")
         followUpUnique = list(dict.fromkeys(followUp))
         for i in followUpUnique:
-            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, individual[const.DISTANCE])
-        followUps = len(followUpUnique)
-        leng = len(baseTimeSteps)
-        #print(f"needed to follow up on {followUps} timesteps, had {notInRangeSkips} skips and {inRange} in range out of {leng} timesteps from {timelen} curvelength w stepslen {baseStepsLen} skipping {const.skippedTimesteps} timesteps per")
+            if(i >= len(targetCurve.time)):
+                continue
+            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, thisSystem.star)
         for i in range(len(targetCurve.time)):
             overallFlux[i] = min(overallFlux[i], myFlux[i])
-    numRejects = overallFlux.count(-1)
-    steps = len(overallFlux)
-    toc = time.perf_counter()
-    #print(f"Lightcurve had {numRejects} convergence errors out of {steps} timesteps in {toc - tic:0.4f} seconds")
     return overallFlux
 
-def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
+def calculateTimestep(i, zeroTime, thisPlanet, thisStar):
+    if(i >= len(targetCurve.time)):
+        return thisStar.flux
     timeIndex = targetCurve.time.iso[i]
     currentTime = dateparser.parse(timeIndex)
     seconds = (currentTime - zeroTime).total_seconds()
@@ -117,9 +95,10 @@ def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
 
     cartesianPosition = thisPlanet.CalculateCartesianPosition(trueAnomaly)
     if(cartesianPosition[1] < 0):
-        return baseFlux
-            
-    rp = getAngularSizeFromSizeAndDist(thisPlanet.radius, 2 * distance + cartesianPosition[1])
+        return thisStar.flux
+
+    rstar = thisStar.radius            
+    rp = getAngularSizeFromSizeAndDist(thisPlanet.radius, 2 * thisStar.distanceTo + cartesianPosition[1])
             
     p = rp / rstar # size ratio, km/km = scalar
     p2 = math.pow(p,2) # scalar squared = scalar
@@ -130,15 +109,15 @@ def calculateTimestep(i, zeroTime, thisPlanet, rstar, baseFlux, distance):
     # center to center distance between star and planet
     cartesianDist = math.dist([0,0,0], collapsedPosition)
 
-    d = getAngularSizeFromSizeAndDist(cartesianDist, distance)
+    d = getAngularSizeFromSizeAndDist(cartesianDist, thisStar.distanceTo)
 
     if(d > rp + rstar):
-        return baseFlux
+        return thisStar.flux
 
     z = d / rstar
     z2 = math.pow(z,2)
 
-    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2,baseFlux))
+    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, thisStar.flux))
 
 def getAngularSizeFromSizeAndDist(size, distance):
     angularSize = mpm.mpf('0')
@@ -203,9 +182,7 @@ def lerp(a,b,c):
 def randomizeAttr(currentValue, mutFactor):
     return currentValue + lerp(-1 * mutFactor, mutFactor, random.random())
 
-def mutation(individual, indpb):
-    # have probability to mutate each attribute, with prob such that 2 are mutate per
-    indexToMutate = random.randint(0,len(individual)-1)
+def mutateAttr(individual, indexToMutate):
     attrIndex = indexToMutate % const.ATTRPERPLANET
     if(indexToMutate == const.NUMPLANETS):
         #print("mutating num planets")
@@ -233,50 +210,13 @@ def mutation(individual, indpb):
         if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
 
-def validateIndividual(individual):
-    for index in range(len(individual)):
-        attrIndex = index % const.ATTRPERPLANET
-        if (index == const.NUMPLANETS):
-            individual[index] = random.randint(0, const.MAXPLANETS)
-            #individual[index] = 3
-        elif (index == const.STARRADIUS):
-            individual[index] = const.STARRADIUSMIN * random.randint(1000000,1000000000)
-        elif (index == const.STARMASS):
-            if(individual[index] <= const.STARMASSMIN):
-                individual[index] = const.STARMASSMIN
-        elif (index == const.STARBASEFLUX):
-            if(individual[index] < const.STARBASEFLUXMIN):
-                individual[index] = const.STARBASEFLUXMIN
-        elif (index == const.DISTANCE):
-            individual[index] = 9460730000000 * random.random(5,500) # 5-500 lightyears
-        elif (attrIndex == const.RADIUS):
-            individual[index] = CONSTANTS[attrIndex][const.MAX]
-        elif (attrIndex == const.SMA):
-            if(individual[index] > CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
-        elif (attrIndex == const.ECC):
-            #individual[index] = random.uniform(0.1, 0.4)
-            individual[index] = 0
-        elif (attrIndex == const.INC):
-            individual[index] = 0
-        elif (attrIndex == const.LOAN):
-            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
-        elif (attrIndex == const.AOP):
-            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]
-        elif (attrIndex == const.MA):
-            if(individual[index] >= CONSTANTS[attrIndex][const.MAX]):
-                individual[index] = individual[index] % CONSTANTS[attrIndex][const.MAX]
-            if(individual[index] < CONSTANTS[attrIndex][const.MIN]):
-                individual[index] = CONSTANTS[attrIndex][const.MIN]    
-    return individual
+
+def mutation(individual):
+    # have probability to mutate each attribute, with prob such that 2 are mutate per
+    mutationThreshold = 1 - (const.ATTRSPERMUTATION / len(individual))
+    for i in range(len(individual)):
+        if(random.random() > mutationThreshold):
+            mutateAttr(individual, i)
 
 def randomizeIndividual(individual):
     for index in range(len(individual)):
