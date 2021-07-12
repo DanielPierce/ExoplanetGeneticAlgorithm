@@ -34,9 +34,9 @@
                 "-s",
                 "30",
                 "-g",
-                "10",
+                "1",
                 "-p",
-                "60"
+                "4"
             ],
             "console": "integratedTerminal"
         }

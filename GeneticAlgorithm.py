@@ -185,6 +185,10 @@ def saveResults(pop):
     bestIndiv = pop[fits.index(max(fits))]
 
     lc = helpers.generateLightcurve(bestIndiv)
+    zero = lc.flux[0]
+    last = lc.flux[-1]
+    print(f"first: {zero}")
+    print(f"last: {last}")
     hdu = lc.to_fits(curveOutputFile, overwrite=True,TELESCOP='SIMULATION')
     #hdu2 = helpers.targetCurve.to_fits('testoutput.txt', overwrite=True)
     #print("------------------------------------------------------------------------")

@@ -209,6 +209,8 @@ def mutateAttr(individual, indexToMutate):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MAX]
         if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
             individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
+        if(attrIndex == const.INC):
+            individual[indexToMutate] = 0
 
 
 def mutation(individual):
