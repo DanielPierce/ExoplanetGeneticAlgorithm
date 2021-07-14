@@ -82,14 +82,17 @@ def uniformSourceLightcurveAlgorithm(individual):
             overallFlux[i] = min(overallFlux[i], myFlux[i])
     return overallFlux
 
-def calculateTimestep(i, zeroTime, thisPlanet, thisStar):
+def calculateTimestepFromTime(i, zeroTime, thisPlanet, thisStar):
     if(i >= len(targetCurve.time)):
         return thisStar.flux
     timeIndex = targetCurve.time.iso[i]
     currentTime = dateparser.parse(timeIndex)
     seconds = (currentTime - zeroTime).total_seconds()
+    return calculateTimestep(seconds, thisPlanet, thisStar)
 
-    trueAnomaly = thisPlanet.CalculateCurrentTrueAnomaly(seconds)
+def calculateTimestep(deltaTime, thisPlanet, thisStar):
+
+    trueAnomaly = thisPlanet.CalculateCurrentTrueAnomaly(deltaTime)
 
     currentRadius = thisPlanet.CalculateAngularSize(trueAnomaly)
 
@@ -98,10 +101,10 @@ def calculateTimestep(i, zeroTime, thisPlanet, thisStar):
         return thisStar.flux
 
     rstar = thisStar.radius            
-    rp = getAngularSizeFromSizeAndDist(thisPlanet.radius, 2 * thisStar.distanceTo + cartesianPosition[1])
+    rp = getAngularSizeFromSizeAndDist(currentRadius, 2 * thisStar.distanceTo + cartesianPosition[1])
             
-    p = rp / rstar # size ratio, km/km = scalar
-    p2 = math.pow(p,2) # scalar squared = scalar
+    p = rp / rstar
+    p2 = math.pow(p,2)
 
     collapser = [1,0,1]
     collapsedPosition = [a * b for a,b in zip(cartesianPosition, collapser)]

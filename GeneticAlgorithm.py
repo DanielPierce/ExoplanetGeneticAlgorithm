@@ -1,5 +1,6 @@
 
 
+from CustomLightcurve import CustomLightcurve
 from datetime import datetime, timedelta
 from deap.tools.support import Statistics
 import Thesis as helpers
@@ -265,6 +266,8 @@ def getLightCurve():
     print("Generations : %s" %numGenerations)
 
     helpers.targetCurve = lk.read(inputFile).flatten()
+    helpers.targetCustom = CustomLightcurve(helpers.targetCurve)
+    helpers.targetCustomSorted = helpers.targetCustom.sortByFlux()
 
 def main():
     allToldStart = time.perf_counter()

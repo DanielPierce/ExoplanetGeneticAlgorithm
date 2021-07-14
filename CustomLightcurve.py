@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 import dateutil.parser as dateparser
 import TimeStep
 import lightkurve
+import copy
 
 class CustomLightcurve:
     def __init__(self, *args):
         if(len(args) == 2):
             self.timeSteps = list(map(TimeStep.TimeStep, args[0]))
             self.epochTime = args[1]
-        else:
+        elif(len(args) == 1):
             kurve = args[0]
             self.epochTime = kurve.time.iso[0]
             self.timeSteps = []
@@ -17,6 +18,15 @@ class CustomLightcurve:
                 secondsFromEpoch = dateparser.parse(kurve.time.iso[i]) - dateparser.parse(kurve.time.iso[0])
                 self.timeSteps.append(TimeStep.TimeStep(secondsFromEpoch, kurve.flux[i], kurve.flux_err[i]))
 
+    @staticmethod
+    def createFromCopy(targetCLC):
+        newCurve = CustomLightcurve()
+        newCurve.epochTime = targetCLC.epochTime
+        newCurve.timeSteps = copy.deepcopy(targetCLC.timeSteps)
+        for ts in newCurve.timeSteps:
+            ts.flux = 0
+            ts.error = 0
+        return newCurve
 
     def printTimesteps(self):
         print(f"Epoch time: {self.epochTime}")
