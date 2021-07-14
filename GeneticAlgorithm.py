@@ -76,6 +76,7 @@ def runGA():
     #
     # MUTPB is the probability for mutating an individual
     global CXPB, MUTPB
+    #increase prob of crossover? try 0.9
     CXPB, MUTPB = 0.6, 0.4
     # Extracting all the fitnesses of 
     fits = [ind.fitness.values[0] for ind in pop]

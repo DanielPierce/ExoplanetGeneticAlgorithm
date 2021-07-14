@@ -133,3 +133,4 @@ dmypy.json
 *.txt
 *.xlsx
 *.csv
+multiprocessingexample.py
