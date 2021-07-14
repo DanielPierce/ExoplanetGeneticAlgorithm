@@ -1,8 +1,13 @@
 
 
+from TimeStep import TimeStep
+from datetime import datetime
 import unittest
 from Thesis import uniformSourceResultAlgorithm
+import lightkurve as lk
+import CustomLightcurve
 import math
+import dateutil.parser as dateparser
 
 class TestUniformSourceAlgorithm(unittest.TestCase):
 
@@ -67,3 +72,34 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
         self.assertLessEqual(z, p - 1)
         self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, flux), 1)
 
+class TestCustomLightcurves(unittest.TestCase):
+    def test_creation(self):
+        times = [9,8,7,6,5,4,3,2,1,0]
+        epoch = datetime.now()
+        test = CustomLightcurve.CustomLightcurve(times,epoch)
+        for i in range(len(test.timeSteps)):
+            test.timeSteps[i].flux = (i * 37) % 7
+        sorted = test.sortByFlux()
+        self.assertEqual(sorted.timeSteps[0].distanceToTimestep(sorted.timeSteps[1]), 7)
+    
+    def test_distance(self):
+        times = [9,8,7,6,5,4,3,2,1,0]
+        epoch = datetime.now()
+        test = CustomLightcurve.CustomLightcurve(times,epoch)
+        for i in range(len(test.timeSteps)):
+            test.timeSteps[i].flux = (i * 37) % 7
+        sorted = test.sortByFlux()
+
+        self.assertAlmostEqual(sorted.timeSteps[0].distanceToTimestep(sorted.timeSteps[3]), 2.2, places=1)
+        sorted.timeSteps[0].error = 2
+        self.assertEqual(sorted.timeSteps[0].distanceToTimestep(sorted.timeSteps[3]), 1)
+    
+    def test_from_lightkurve(self):
+        # generally dont include these tests because they take a relatively huge amount of time and cause warnings (from the library)
+        include = False
+        if(include):
+            kurve = lk.read("DefaultFileTIC307210830C.fits")
+            custom = CustomLightcurve.CustomLightcurve(kurve)
+            self.assertEqual(kurve.time.iso[0], custom.epochTime)
+            self.assertEqual(kurve.flux[0], custom.timeSteps[0].flux)
+            self.assertEqual(kurve.flux_err[0], custom.timeSteps[0].error)
