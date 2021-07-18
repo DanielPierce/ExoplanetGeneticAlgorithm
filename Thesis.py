@@ -1,3 +1,4 @@
+from CustomLightcurve import CustomLightcurve
 from PlanetarySystem import PlanetarySystem
 from Planet import Planet
 import Constants as const
@@ -13,6 +14,7 @@ import dateutil.parser as dateparser
 import time
 
 import mpmath as mpm
+import copy
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
@@ -24,7 +26,7 @@ def generateRandomLightCurve(individual):
     myErr = [0 * targetCurve.flux_err.unit for i in range(len(myTimes))]
     return lk.LightCurve(time=myTimes, flux=myFlux, flux_err=myErr)
 
-def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
+def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2):
     if(1 + p < z):
         return 0
     elif(abs(1 - p) < z and z <= 1 + p):
@@ -32,9 +34,9 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2, f):
         k1 = math.acos(result1)
         result2 = (p2 + z2 - 1) / (2 * p * z)
         k0 = math.acos(result2)
-        return f * (1 / math.pi) * ( p2* k0 + k1 - math.sqrt((4 * z2 - math.pow(1 + z2 - p2,2)) / 4))
+        return (1 / math.pi) * ( p2* k0 + k1 - math.sqrt((4 * z2 - math.pow(1 + z2 - p2,2)) / 4))
     elif(z <= 1-p):
-        return math.pow(p,2)
+        return p2
     elif(z <= p-1):
         return 1
     else:
@@ -47,51 +49,44 @@ def uniformSourceLightcurveAlgorithm(individual):
     notInRangeSkips = 0
     inRange = 0
     thisSystem = PlanetarySystem(individual)
+    planetCurves = []
     for planetIndex in range(thisSystem.numActivePlanets):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
-       
+        customCurve = CustomLightcurve(targetCurve)
         rstar = thisSystem.CalculateStarAngularSize()
                                                                                                               
         thisSystem.CalculatePlanetaryPeriod(planetIndex)
         
-        zeroTime = dateparser.parse(targetCurve.time.iso[0])
-        myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
+        zeroTime = dateparser.parse(customCurve.epochTime)
+        #myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
         baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
         followUp = []
-
-        for i in baseStepIndices:
-            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, thisSystem.star)
+        baseCustomSteps = customCurve.getUnskippedTimesteps(const.skippedTimesteps)
+        for currentStepIndex in baseCustomSteps:
+            currentStep = baseCustomSteps[currentStepIndex]
+            #myFlux[i] = calculateTimestepFromTime(i, zeroTime, thisPlanet, thisSystem.star)
+            currentStep.flux = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
-            if(myFlux[i] != baseFlux):
+            if(currentStep.flux != baseFlux):
                 inRange = inRange + 1
-                for x in range(i - const.skippedTimesteps, i):
-                    followUp.append(x)
-                for x in range(i, i + const.skippedTimesteps):
-                    followUp.append(x)
+                for x in range(currentStepIndex - const.skippedTimesteps, currentStepIndex):
+                    followUp.append(customCurve.timeSteps[x])
+                for x in range(currentStepIndex,currentStepIndex + const.skippedTimesteps):
+                    followUp.append(customCurve.timeSteps[x])
             else:
                 notInRangeSkips = notInRangeSkips + 1
         followUpUnique = list(dict.fromkeys(followUp))
-        for i in followUpUnique:
-            if(i >= len(targetCurve.time)):
-                continue
-            myFlux[i] = calculateTimestep(i, zeroTime, thisPlanet, thisSystem.star)
-        for i in range(len(targetCurve.time)):
-            overallFlux[i] = min(overallFlux[i], myFlux[i])
+        for currentStep in followUpUnique:
+            currentStep.flux = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+    
     return overallFlux
 
-def calculateTimestepFromTime(i, zeroTime, thisPlanet, thisStar):
-    if(i >= len(targetCurve.time)):
-        return thisStar.flux
-    timeIndex = targetCurve.time.iso[i]
-    currentTime = dateparser.parse(timeIndex)
-    seconds = (currentTime - zeroTime).total_seconds()
-    return calculateTimestep(seconds, thisPlanet, thisStar)
 
-def calculateTimestep(deltaTime, thisPlanet, thisStar):
-
+def calculateTimestep(timestep, thisPlanet, thisStar):
+    deltaTime = timestep.secondsFromEpoch
     trueAnomaly = thisPlanet.CalculateCurrentTrueAnomaly(deltaTime)
 
     currentRadius = thisPlanet.CalculateAngularSize(trueAnomaly)
@@ -120,7 +115,7 @@ def calculateTimestep(deltaTime, thisPlanet, thisStar):
     z = d / rstar
     z2 = math.pow(z,2)
 
-    return (uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, thisStar.flux))
+    return thisStar.flux * (1 - uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2))
 
 def getAngularSizeFromSizeAndDist(size, distance):
     angularSize = mpm.mpf('0')

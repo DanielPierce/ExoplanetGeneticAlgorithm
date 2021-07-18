@@ -27,10 +27,8 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
         
         p, p2, z, z2 = self.calcPP2ZZ2(rstar, rp, d)
         
-        flux = 1000
-
         self.assertLess(1 + p, z)
-        self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, flux), 0)
+        self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2), 0)
     
     def test_case_2(self):
         # Part of planet covers disk of star
@@ -40,11 +38,9 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
 
         p, p2, z, z2 = self.calcPP2ZZ2(rstar, rp, d)
 
-        flux = 1000
-        
         self.assertLess(abs(1 - p), z)
         self.assertLessEqual(z, 1 + p)
-        self.assertAlmostEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, flux), 1.23673625)
+        self.assertAlmostEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2), 0.0012367)
 
     def test_case_3(self):
         # Entirety of planetary disk covers only part of star
@@ -54,10 +50,8 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
 
         p, p2, z, z2 = self.calcPP2ZZ2(rstar, rp, d)
 
-        flux = 1000
-        
         self.assertLessEqual(z, 1 - p)
-        self.assertAlmostEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, flux), p2)
+        self.assertAlmostEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2), p2)
         
     def test_case_4(self):
         # Entirety of stellar disk is obscured
@@ -67,10 +61,8 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
 
         p, p2, z, z2 = self.calcPP2ZZ2(rstar, rp, d)
 
-        flux = 1000
-        
         self.assertLessEqual(z, p - 1)
-        self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2, flux), 1)
+        self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2), 1)
 
 class TestCustomLightcurves(unittest.TestCase):
     def test_creation(self):

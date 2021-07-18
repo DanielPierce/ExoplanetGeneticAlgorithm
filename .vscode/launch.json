@@ -23,7 +23,7 @@
             "name": "Run GA",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/geneticalgorithm/GeneticAlgorithm.py",
+            "program": "${workspaceFolder}/GeneticAlgorithm.py",
             "args": [
                 "-i",
                 "DefaultFileTIC307210830C.fits",

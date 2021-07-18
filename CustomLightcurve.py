@@ -43,3 +43,13 @@ class CustomLightcurve:
         sortedCurve = CustomLightcurve(self.getTimes(), self.epochTime)
         sortedCurve.timeSteps = sorted(self.timeSteps, key= lambda x: (x.flux, x.secondsFromEpoch))
         return sortedCurve
+
+    def setBaseFlux(self, baseFlux):
+        for i in range(len(self.timeSteps)):
+            self.timeSteps[i].flux = baseFlux
+
+    def getUnskippedTimesteps(self, timestepsToSkip):
+        unskipped = []
+        for i in range(len(self.timeSteps), timestepsToSkip):
+            unskipped.append(self.timeSteps[i])
+        return unskipped
