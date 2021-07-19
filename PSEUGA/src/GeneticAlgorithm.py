@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import time
 import random
 import statistics
+import sys
 
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -29,7 +30,9 @@ toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
+
 def runGA(processPool, populationSize, numGenerations):
+    print('starting GA')
     veryBeginning = time.perf_counter()
 
     timings = []
@@ -133,4 +136,4 @@ def runGA(processPool, populationSize, numGenerations):
         
     veryEnd = time.perf_counter()
     print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
-    return pop, timings
+    return pop, timings, [CXPB, MUTPB, meanFitness, fitnessSTD, minFitness, maxFitness]

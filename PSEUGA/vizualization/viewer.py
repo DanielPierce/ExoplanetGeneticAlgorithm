@@ -2,8 +2,9 @@
 #%%
 #%matplotlib inline
 from traitlets.traitlets import Integer
-import Thesis as helpers
-import Constants as const
+import PSEUGA.src.Thesis as helpers
+import PSEUGA.common.Constants as const
+import PSEUGA.common.PlanetarySystem
 
 import lightkurve as lk
 import numpy as np
@@ -18,6 +19,7 @@ import matplotlib
 import csv
 import openpyxl as xl
 from openpyxl.formatting.rule import ColorScaleRule
+import jsonpickle
 
 
 
@@ -159,7 +161,12 @@ def openFiles():
     plotAvg = result[1]
     print(plotAvg)
     
-
+def testPickle():
+    indiv = ''
+    with open('test.json') as f:
+        reader = f.read()
+        indiv = jsonpickle.decode(reader)
+    print(f"Found {indiv.numActivePlanets} active planets")
 
 def main():
     getInputs()

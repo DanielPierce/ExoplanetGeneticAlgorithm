@@ -13,6 +13,9 @@ import os
 
 import PSEUGA.src.inputhandling as input
 import multiprocessing as mp
+import PSEUGA.src.outputhandling as output
+
+import PSEUGA.vizualization.viewer as view
 
 
 inputFile = ""
@@ -41,11 +44,7 @@ def printResults(pop):
     print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
-def saveResults(pop):
-    global inputFile
-    global curveOutputFile
-    global dataOutputFile
-    
+def saveResults(pop, timings, runInfo, curveOutputFile, dataOutputFile, popOutputFile):
 
     if os.path.exists(curveOutputFile):
         os.remove(curveOutputFile)
@@ -82,14 +81,15 @@ def saveResults(pop):
     dataFile.write(str(numGenerations) + "\n")
     dataFile.write(str(numIndividuals) + "\n")
     dataFile.write("\n\n")
-    dataFile.write(str(CXPB) + "\n")
-    dataFile.write(str(MUTPB) + "\n")
+    dataFile.write(str(runInfo[0]) + "\n")
+    dataFile.write(str(runInfo[1]) + "\n")
     dataFile.write("\n\n")
-    dataFile.write(str(meanFitness) + "\n")
-    dataFile.write(str(fitnessSTD) + "\n")
-    dataFile.write(str(minFitness) + "\n")
-    dataFile.write(str(maxFitness) + "\n")
+    dataFile.write(str(runInfo[2]) + "\n")
+    dataFile.write(str(runInfo[3]) + "\n")
+    dataFile.write(str(runInfo[4]) + "\n")
+    dataFile.write(str(runInfo[5]) + "\n")
     dataFile.close()
+    output.saveBestIndividual(bestIndiv)
     #reread = lk.read('testoutput.txt')
     #reread2 = lk.read(curveOutputFile)
     popArray = np.array(pop)
@@ -155,6 +155,10 @@ def main():
     populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug = input.getSettingsFromConf()
     inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = input.getIOFromInput(sys.argv, debug)
     
+    indiv = [i for i in range(0, const.ATTRPERPLANET * const.MAXPLANETS + 5)]
+    indiv = helpers.randomizeIndividual(indiv)
+    output.saveBestIndividual(indiv, 'test.json')
+    view.testPickle()
     try:
         helpers.targetCurve = lk.read(inputFilePath)
     except FileNotFoundError:
@@ -163,7 +167,7 @@ def main():
     const.skippedTimesteps = timestepsToSkip
 
     threadPool = mp.Pool(numChildProcesses, initializeChildProcesses, [helpers.targetCurve, timestepsToSkip])
-    finalPopulation, generationTimings = ga.runGA(threadPool, populationSize, numGenerations)
+    finalPopulation, generationTimings, runInfo = ga.runGA(threadPool, populationSize, numGenerations)
     print("finished ga!!!!")
 
     
