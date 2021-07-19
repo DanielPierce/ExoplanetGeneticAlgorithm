@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta
 import dateutil.parser as dateparser
-import TimeStep
+import PSEUGA.common.TimeStep
 import lightkurve
 import copy
 

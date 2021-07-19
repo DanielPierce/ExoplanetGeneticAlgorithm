@@ -1,10 +1,10 @@
 
 
-from CustomLightcurve import CustomLightcurve
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from datetime import datetime, timedelta
 from deap.tools.support import Statistics
-import Thesis as helpers
-import Constants as const
+import PSEUGA.src.Thesis as helpers
+import PSEUGA.common.Constants as const
 
 import lightkurve as lk
 import numpy as np

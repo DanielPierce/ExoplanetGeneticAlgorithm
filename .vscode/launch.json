@@ -8,7 +8,7 @@
             "name": "Run Viewer",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/viewer.py",
+            "program": "${workspaceFolder}/ExoplanetGA/visualization/viewer.py",
             "args": [
                 "-i",
                 "DefaultFileTIC307210830C.fits",
@@ -23,7 +23,7 @@
             "name": "Run GA",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/GeneticAlgorithm.py",
+            "program": "${workspaceFolder}/ExoplanetGA/src/GeneticAlgorithm.py",
             "args": [
                 "-i",
                 "DefaultFileTIC307210830C.fits",

@@ -1,13 +1,14 @@
 
 
-from TimeStep import TimeStep
+from common.TimeStep import TimeStep
 from datetime import datetime
-import unittest
-from Thesis import uniformSourceResultAlgorithm
-import lightkurve as lk
-from CustomLightcurve import CustomLightcurve
+from src.Thesis import uniformSourceResultAlgorithm
+from common.CustomLightcurve import CustomLightcurve
+
 import math
 import dateutil.parser as dateparser
+import lightkurve as lk
+import unittest
 
 class TestUniformSourceAlgorithm(unittest.TestCase):
 

@@ -1,8 +1,8 @@
-from CustomLightcurve import CustomLightcurve
-from PlanetarySystem import PlanetarySystem
-from Planet import Planet
-import Constants as const
-from Constants import ATTRSPERMUTATION, CONSTANTS
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
+from PSEUGA.common.PlanetarySystem import PlanetarySystem
+from PSEUGA.common.Planet import Planet
+import PSEUGA.common.Constants as const
+from PSEUGA.common.Constants import ATTRSPERMUTATION, CONSTANTS
 
 import lightkurve as lk
 import numpy as np

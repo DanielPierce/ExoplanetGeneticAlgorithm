@@ -1,14 +1,14 @@
 
-import Constants as const
-import Planet
-import Star
+import PSEUGA.common.Constants as const
+from PSEUGA.common.Planet import Planet
+from PSEUGA.common.Star import Star
 import mpmath as mpm
 
 class PlanetarySystem:
     def __init__(self, individual):
         self.planets = []
         for i in range(const.MAXPLANETS):
-            self.planets.append(Planet.Planet(
+            self.planets.append(Planet(
             individual[const.ATTRPERPLANET * i + const.RADIUS],
             individual[const.ATTRPERPLANET * i + const.ECC],
             individual[const.ATTRPERPLANET * i + const.SMA],
@@ -18,7 +18,7 @@ class PlanetarySystem:
             individual[const.ATTRPERPLANET * i + const.MA]))
         self.distanceTo = individual[const.DISTANCE]
         self.numActivePlanets = individual[const.NUMPLANETS]
-        self.star = Star.Star(individual[const.STARRADIUS], individual[const.STARMASS], individual[const.STARBASEFLUX], self.distanceTo)
+        self.star = Star(individual[const.STARRADIUS], individual[const.STARMASS], individual[const.STARBASEFLUX], self.distanceTo)
 
     def GetPlanet(self, index):
         return self.planets[index]
