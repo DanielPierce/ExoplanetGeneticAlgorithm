@@ -19,6 +19,8 @@ import sys, getopt
 import os
 import time
 
+import PSEUGA.src.inputhandling as input
+
 import multiprocessing as mp
 
 inputFile = ""
@@ -270,14 +272,17 @@ def getLightCurve():
     #helpers.targetCustomSorted = helpers.targetCustom.sortByFlux()
 
 def main():
-    allToldStart = time.perf_counter()
-    print(f"Start time: {datetime.now()}")
-    getLightCurve()
-    pop = runGA()
-    printResults(pop)
-    saveResults(pop)
-    allToldEnd = time.perf_counter()
-    print(f"All told, ran to completion in {allToldEnd - allToldStart:0.4f} seconds")
+    #allToldStart = time.perf_counter()
+    #print(f"Start time: {datetime.now()}")
+    #getLightCurve()
+    #pop = runGA()
+    #printResults(pop)
+    #saveResults(pop)
+    #allToldEnd = time.perf_counter()
+    #print(f"All told, ran to completion in {allToldEnd - allToldStart:0.4f} seconds")
+    populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses = input.getSettingsFromConf()
+    inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = input.getIOFromInput(sys.argv)
+    
 
 if __name__ == "__main__":
     main()

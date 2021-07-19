@@ -1,5 +1,5 @@
 
-from PSEUGA import GeneticAlgorithm
+from PSEUGA import app
 
 if __name__ == '__main__':
-    GeneticAlgorithm.main()
+    app.main()
