@@ -36,7 +36,7 @@ def runGA(processPool, populationSize, numGenerations):
     veryBeginning = time.perf_counter()
 
     timings = []
-
+    hof = tools.HallOfFame(3)
     pop = toolbox.population(n=populationSize)
     tic = time.perf_counter()
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
@@ -101,7 +101,7 @@ def runGA(processPool, populationSize, numGenerations):
             ind.fitness.values = fit
         # shuffle positions of population bc of positional crossover
         pop[:] = offspring
-
+        hof.update(pop)
         # Gather all the fitnesses in one list and print the stats
         fits = [ind.fitness.values[0] for ind in pop]
         
@@ -136,4 +136,4 @@ def runGA(processPool, populationSize, numGenerations):
         
     veryEnd = time.perf_counter()
     print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
-    return pop, timings, [CXPB, MUTPB, meanFitness, fitnessSTD, minFitness, maxFitness]
+    return pop, timings, [CXPB, MUTPB, meanFitness, fitnessSTD, minFitness, maxFitness], hof

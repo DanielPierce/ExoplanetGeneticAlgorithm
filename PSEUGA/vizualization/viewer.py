@@ -168,6 +168,10 @@ def testPickle():
         indiv = jsonpickle.decode(reader)
     print(f"Found {indiv.numActivePlanets} active planets")
 
+def testOpenLightcurve(filepath):
+    kurve = lk.read(filepath)
+    return kurve
+
 def main():
     getInputs()
     openFiles()

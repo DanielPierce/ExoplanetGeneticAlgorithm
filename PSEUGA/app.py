@@ -17,18 +17,6 @@ import PSEUGA.src.outputhandling as output
 
 import PSEUGA.vizualization.viewer as view
 
-
-inputFile = ""
-curveOutputFile = ""
-dataOutputFile = ""
-populationOutputFile = ""
-numThreads = 0
-numIndividuals = 0
-numGenerations = 0
-timings = []
-
-
-
 def printResults(pop):
     fits = [ind.fitness.values[0] for ind in pop]
     bestIndiv = pop[fits.index(max(fits))]
@@ -44,121 +32,15 @@ def printResults(pop):
     print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
-def saveResults(pop, timings, runInfo, curveOutputFile, dataOutputFile, popOutputFile):
-
-    if os.path.exists(curveOutputFile):
-        os.remove(curveOutputFile)
-    if os.path.exists(dataOutputFile):
-        os.remove(dataOutputFile)
-
-    fits = [ind.fitness.values[0] for ind in pop]
-    bestIndiv = pop[fits.index(max(fits))]
-
-    lc = helpers.generateLightcurve(bestIndiv)
-    zero = lc.flux[0]
-    last = lc.flux[-1]
-    print(f"first: {zero}")
-    print(f"last: {last}")
-    hdu = lc.to_fits(curveOutputFile, overwrite=True,TELESCOP='SIMULATION')
-    #hdu2 = helpers.targetCurve.to_fits('testoutput.txt', overwrite=True)
-    #print("------------------------------------------------------------------------")
-    #print(hdu[0].header)
-    #rint("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    #print(hdu[1].header)
-    #print("========================================================================")
-    #print("------------------------------------------------------------------------")
-    #print(hdu2[0].header)
-    #print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    #print(hdu2[1].header)
-    #print("========================================================================")
-
-    dataFile = open(dataOutputFile, 'w')
-    for characteristic in bestIndiv:
-        dataFile.write(str(characteristic) + "\n")
-    dataFile.write("\n\n")
-    dataFile.write(str(numThreads) + "\n")
-    dataFile.write(str(const.skippedTimesteps) + "\n")
-    dataFile.write(str(numGenerations) + "\n")
-    dataFile.write(str(numIndividuals) + "\n")
-    dataFile.write("\n\n")
-    dataFile.write(str(runInfo[0]) + "\n")
-    dataFile.write(str(runInfo[1]) + "\n")
-    dataFile.write("\n\n")
-    dataFile.write(str(runInfo[2]) + "\n")
-    dataFile.write(str(runInfo[3]) + "\n")
-    dataFile.write(str(runInfo[4]) + "\n")
-    dataFile.write(str(runInfo[5]) + "\n")
-    dataFile.close()
-    output.saveBestIndividual(bestIndiv)
-    #reread = lk.read('testoutput.txt')
-    #reread2 = lk.read(curveOutputFile)
-    popArray = np.array(pop)
-    print(len(pop))
-    np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
-    np.savetxt(populationOutputFile, popArray, delimiter=',')
-
-def getLightCurve():
-    global inputFile
-    global curveOutputFile
-    global dataOutputFile
-    global populationOutputFile
-    global numThreads
-    global numIndividuals
-    global numGenerations
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "i:o:t:s:p:g:")
-    except getopt.GetoptError:
-        print('GeneticAlgorithm.py -i <inputfile> -o <outputfilesprefix> -t <number of threads> -s <skipped timesteps> -p <population size> -g <number of generations>')
-    for opt, arg in opts:
-        if opt == '-i':
-            inputFile = arg
-        elif opt == '-o':
-            curveOutputFile = arg + "curve.txt"
-            dataOutputFile = arg + "data.txt" 
-            populationOutputFile = arg + "pop.csv"
-        elif opt == '-t':
-            numThreads = int(arg)
-        elif opt == '-s':
-            const.skippedTimesteps = int(arg)
-        elif opt == '-p':
-            numIndividuals = int(arg)
-        elif opt == '-g':
-            numGenerations = int(arg)
-    
-    print("Input: %s" %inputFile)
-    print("Curve: %s" %curveOutputFile)
-    print("Data : %s" %dataOutputFile)
-    print("Threads : %s" %numThreads)
-    print("skippedTimesteps : %s" %const.skippedTimesteps)
-    print("Population : %s" %numIndividuals)
-    print("Generations : %s" %numGenerations)
-
-    helpers.targetCurve = lk.read(inputFile)
-    #helpers.targetCustom = CustomLightcurve(helpers.targetCurve)
-    #helpers.targetCustomSorted = helpers.targetCustom.sortByFlux()
-
-
 def initializeChildProcesses(target, timesteps):
     helpers.targetCurve = target
     const.skippedTimesteps = timesteps
 
 def main():
-    #allToldStart = time.perf_counter()
-    #print(f"Start time: {datetime.now()}")
-    #getLightCurve()
-    #pop = runGA()
-    #printResults(pop)
-    #saveResults(pop)
-    #allToldEnd = time.perf_counter()
-    #print(f"All told, ran to completion in {allToldEnd - allToldStart:0.4f} seconds")
     populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug = input.getSettingsFromConf()
-    inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = input.getIOFromInput(sys.argv, debug)
-    
-    indiv = [i for i in range(0, const.ATTRPERPLANET * const.MAXPLANETS + 5)]
-    indiv = helpers.randomizeIndividual(indiv)
-    output.saveBestIndividual(indiv, 'test.json')
-    view.testPickle()
+    settings = [populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug]
+    inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = input.getIOFromInput(sys.argv, debug)
+
     try:
         helpers.targetCurve = lk.read(inputFilePath)
     except FileNotFoundError:
@@ -167,9 +49,14 @@ def main():
     const.skippedTimesteps = timestepsToSkip
 
     threadPool = mp.Pool(numChildProcesses, initializeChildProcesses, [helpers.targetCurve, timestepsToSkip])
-    finalPopulation, generationTimings, runInfo = ga.runGA(threadPool, populationSize, numGenerations)
-    print("finished ga!!!!")
-
+    finalPopulation, generationTimings, runInfo, hof = ga.runGA(threadPool, populationSize, numGenerations)
+    print("Done with GA, starting save")
+    bestIndividual = hof[0]
+    output.saveBestIndividual(bestIndividual, bestIndivOutputPath)
+    output.saveRunData(runInfo, settings, generationTimings, runDataOutputPath)
+    output.savePopulation(finalPopulation, populationOutputPath)
+    output.saveLightcurve(bestIndividual, fitsOutputPath)
+    print("Done saving!\nExiting properly...")
     
 
 if __name__ == "__main__":

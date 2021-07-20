@@ -26,20 +26,20 @@ def getIOFromInput(args, debug):
     now = datetime.now()
     if len(args) == 1 and debug:
         pathToInput, inputFileName = getInputInfoFromArg('DefaultFileTIC307210830C.fits')
-        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, 'default')
+        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, 'default')
         print('In debug, running default config')
-        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath)
-        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath
+        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath)
+        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath
     if len(args) == 2:
         pathToInput, inputFileName = getInputInfoFromArg(args[1])
-        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, inputFileName)
-        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath)
-        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath
+        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, inputFileName)
+        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath)
+        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath
     if len(args) == 3:
         pathToInput, inputFileName = getInputInfoFromArg(args[1])
-        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, args[2])
-        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath)
-        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath
+        inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, args[2])
+        #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath)
+        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath
     print("Usage: python -m PSEUGA <input.fits> (optional)<outputsprefix>")
     sys.exit(-1)
     
@@ -48,7 +48,8 @@ def getPathsFromName(pathToInput, pathToOutput, inputName, outputName):
         fitsOutputPath = pathToOutput + outputName + "_OUT.fits"
         populationOutputPath = pathToOutput + outputName + "_POP.csv"
         runDataOutputPath = pathToOutput + outputName + "_RUNDATA.txt"
-        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath
+        bestIndivOutputPath = pathToOutput + outputName + "_BEST.json"
+        return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath
 
 def getInputInfoFromArg(pathArg):
         pathToFile, fileNamePlusExt = os.path.split(pathArg)
@@ -62,11 +63,12 @@ def getInputInfoFromArg(pathArg):
         #print(f"pathToFile: {pathToFile}\nfileNamePlusExt: {fileNamePlusExt}\nfileName: {fileName}\nextension: {extension}")
         return pathToFile, fileName
 
-def printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath):
+def printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath):
     print(f"InputPath:  {inputFilePath}")
     print(f"OutputFits: {fitsOutputPath}")
     print(f"Population: {populationOutputPath}")
     print(f"Run data:   {runDataOutputPath}")
+    print(f"Best Indiv: {bestIndivOutputPath}")
 
 def printConfig(populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug):
     print(f"Pop  : {populationSize} which is a {type(populationSize)}")
