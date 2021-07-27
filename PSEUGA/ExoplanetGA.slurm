@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name="Exoplanet GA Testing"
+#SBATCH --job-name="Exoplanet GA Test Run"
 #SBATCH --output="testdata.%j.%N.out"
 #SBATCH --error="testdata.%j.%N.err"
 #SBATCH --partition=shared
@@ -15,4 +15,4 @@ module load gcc/10.2.0
 module load python
 
 ## Run script (replace with real)
-python test_exp.py
+python -m PSEUGA
