@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --export=ALL
-#SBATCH --account=fsc102
+#SBATCH --account=dpierce
 
 ## Setup run environment
 module reset
