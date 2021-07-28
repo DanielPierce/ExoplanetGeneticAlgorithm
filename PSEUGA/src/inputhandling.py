@@ -27,7 +27,7 @@ def getIOFromInput(args, debug):
     if len(args) == 1 and debug:
         pathToInput, inputFileName = getInputInfoFromArg('DefaultFileTIC307210830C.fits')
         inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = getPathsFromName(pathToInput, outputPath, inputFileName, 'default')
-        print('In debug, running default config')
+        print('In debug with no input, running with inputs set to default')
         #printPaths(inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath)
         return inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath
     if len(args) == 2:

@@ -32,7 +32,8 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 
 
 def runGA(processPool, populationSize, numGenerations):
-    print('starting GA')
+    global hof
+    print(f'Starting GA at {datetime.now()}')
     veryBeginning = time.perf_counter()
 
     timings = []
@@ -59,7 +60,7 @@ def runGA(processPool, populationSize, numGenerations):
     # MUTPB is the probability for mutating an individual
     global CXPB, MUTPB
     #increase prob of crossover? try 0.9
-    CXPB, MUTPB = 0.6, 0.4
+    CXPB, MUTPB = 0.9, 0.4
     # Extracting all the fitnesses of 
     fits = [ind.fitness.values[0] for ind in pop]
         # Variable keeping track of the number of generations
@@ -67,73 +68,75 @@ def runGA(processPool, populationSize, numGenerations):
     
     # Begin the evolution
     while g < numGenerations:
-        tic = time.perf_counter()
         # A new generation
         g = g + 1
         print(f"-- Generation {g}/{numGenerations} --")
-        # Select the next generation individuals
-        # add some sort of elitism or hall of fame
-        startSelect = time.perf_counter()
-        offspring = toolbox.select(pop, len(pop))
-        # Clone the selected individuals
-        offspring = list(map(toolbox.clone, offspring))       
-        endSelect = time.perf_counter()
-        startCX = time.perf_counter()
-        # Apply crossover and mutation on the offspring
-        for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            if random.random() < CXPB:
-                toolbox.mate(child1, child2)
-                del child1.fitness.values
-                del child2.fitness.values
-        endCX = time.perf_counter()
-        startMutate = time.perf_counter()
-        for mutant in offspring:
-            if random.random() < MUTPB:
-                toolbox.mutate(mutant)
-                del mutant.fitness.values
-        endMutate = time.perf_counter()
-        # Evaluate the individuals with an invalid fitness
-        startEval = time.perf_counter()
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
-        endEval = time.perf_counter()
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-        # shuffle positions of population bc of positional crossover
-        pop[:] = offspring
-        hof.update(pop)
-        # Gather all the fitnesses in one list and print the stats
-        fits = [ind.fitness.values[0] for ind in pop]
-        
-        length = len(pop)
-        global meanFitness
-        meanFitness = sum(fits) / length
-        sum2 = sum(x*x for x in fits)
-        global fitnessSTD
-        fitnessSTD = abs(sum2 / length - meanFitness**2)**0.5
-        global minFitness
-        minFitness = min(fits)
-        global maxFitness
-        maxFitness = max(fits)
-        print("  Min %s" % min(fits))
-        print("  Max %s" % max(fits))
-        print("  Avg %s" % meanFitness)
-        print("  Std %s" % fitnessSTD)
+
+        tic = time.perf_counter()
+        runGeneration(pop, processPool)
         toc = time.perf_counter()
-        thisGen = toc - tic
-        timings.append(thisGen)
-        avg = statistics.mean(timings)
-        gensLeft = numGenerations - g
-        remainingSeconds = gensLeft * avg
-        estimate = datetime.now() + timedelta(seconds=remainingSeconds)
-        select = endSelect-startSelect
-        cx = endCX-startCX
-        mut = endMutate-startMutate
-        evalu = endEval-startEval
-        print(f"Generation {g} complete in {thisGen:0.4f} seconds, averaging {avg:0.1f} seconds per")
-        print(f"Selection: {select}s, CX: {cx}s, Mut: {mut}s, Eval: {evalu}s")
-        print(f"Estimate {remainingSeconds} seconds remaining, done at {estimate}")
+        thisGenTime = toc - tic
+        timings.append(thisGenTime)
         
+        popStats = calculatePopStatistics(pop)
+        timeStats = calculateTimeStatistics(timings, numGenerations, g)
+        printGenerationData(popStats, timeStats, g)
+        
+    popStats = calculatePopStatistics(pop)
     veryEnd = time.perf_counter()
     print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
-    return pop, timings, [CXPB, MUTPB, meanFitness, fitnessSTD, minFitness, maxFitness], hof
+    return pop, timings, [CXPB, MUTPB, popStats['avgFitness'], popStats['stdFitness'], popStats['minFitness'], popStats['maxFitness']], hof
+
+
+def runGeneration(pop, processPool):
+    # Select the next generation individuals
+    # add some sort of elitism or hall of fame
+    offspring = toolbox.select(pop, len(pop))
+    # Clone the selected individuals
+    offspring = list(map(toolbox.clone, offspring))       
+    # Apply crossover and mutation on the offspring
+    for child1, child2 in zip(offspring[::2], offspring[1::2]):
+        if random.random() < CXPB:
+            toolbox.mate(child1, child2)
+            del child1.fitness.values
+            del child2.fitness.values
+    for mutant in offspring:
+        if random.random() < MUTPB:
+            toolbox.mutate(mutant)
+            del mutant.fitness.values
+    # Evaluate the individuals with an invalid fitness
+    invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+    fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    for ind, fit in zip(invalid_ind, fitnesses):
+        ind.fitness.values = fit
+    # shuffle positions of population bc of positional crossover
+    pop[:] = offspring
+    hof.update(pop)
+    # Gather all the fitnesses in one list and print the stats
+        
+def printGenerationData(popStats, timeStats, g):
+    print(f"  Min: {popStats['minFitness']}")
+    print(f"  Max: {popStats['maxFitness']}")
+    print(f"  Avg: {popStats['avgFitness']}")
+    print(f"  Std: {popStats['stdFitness']}")
+    print(f"Generation {g} complete in {timeStats['currentTime']:0.4f} seconds, averaging {timeStats['avg']:0.1f} seconds per")
+    print(f"Estimate {timeStats['timeRemaining']} seconds remaining, done at {timeStats['estCompletionTime']}")
+
+def calculateTimeStatistics(timings, numGenerations, g):
+    avg = statistics.mean(timings)
+    gensLeft = numGenerations - g
+    timeRemaining = gensLeft * avg
+    estCompletionTime = datetime.now() + timedelta(seconds=timeRemaining)
+    timeStats = {'avg':avg, 'timeRemaining':timeRemaining, 'estCompletionTime':estCompletionTime, 'currentTime':timings[-1]}
+    return timeStats
+
+def calculatePopStatistics(pop):
+    length = len(pop)
+    fits = [ind.fitness.values[0] for ind in pop]
+    avgFitness = sum(fits) / length
+    sum2 = sum(x*x for x in fits)
+    stdFitness = abs(sum2 / length - avgFitness**2)**0.5
+    minFitness = min(fits)
+    maxFitness = max(fits)
+    popStats = {'minFitness':minFitness, 'maxFitness':maxFitness, 'avgFitness':avgFitness, 'stdFitness':stdFitness}
+    return popStats
