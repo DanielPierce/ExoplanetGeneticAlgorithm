@@ -60,10 +60,25 @@ def main():
 
     print("Done with GA, starting save")
     bestIndividual = hof[0]
+    startTime = time.perf_counter()
     output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
+    bestIndivTime = time.perf_counter()
     output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
+    runDataTime = time.perf_counter()
     output.savePopulation(finalPopulation, paths['populationOutputPath'])
+    popTime = time.perf_counter()
     output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
+    lightcurveTime = time.perf_counter()
+    output.savePopHistory(runInfo['popHistory'], paths['popHistoryOutputPath'])
+    popHistTime = time.perf_counter()
+    output.saveTimeHistory(runInfo['timeHistory'], paths['timeHistoryOutputPath'])
+    timeHistTime = time.perf_counter()
+    print(f"Save time for Best Individual: {bestIndivTime - startTime}")
+    print(f"Save time for Run Data:        {runDataTime - bestIndivTime}")
+    print(f"Save time for Population:      {popTime - bestIndivTime}")
+    print(f"Save time for Lightcurve:      {lightcurveTime - popTime}")
+    print(f"Save time for Pop History:     {popHistTime - lightcurveTime}")
+    print(f"Save time for Time History:    {timeHistTime - popHistTime}")
     print("Done saving!\n--+-- RUN COMPLETE --+--")
     
 

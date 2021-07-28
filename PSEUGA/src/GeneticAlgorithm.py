@@ -34,6 +34,8 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 def runGA(processPool, numGenerations, pop):
 
     timings = []
+    popStatsOverTime = []
+    timeStatsOverTime = []
     # Variable keeping track of the number of generations
     g = 0
     # Begin the evolution
@@ -49,11 +51,13 @@ def runGA(processPool, numGenerations, pop):
         timings.append(thisGenTime)
         
         popStats = calculatePopStatistics(pop)
+        popStatsOverTime.append(popStats)
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
+        timeStatsOverTime.append(timeStats)
         printGenerationData(popStats, timeStats, g)
 
     popStats = calculatePopStatistics(pop)
-    runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats}
+    runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats, 'popHistory':popStatsOverTime, 'timeHistory':timeStatsOverTime}
     return pop, timings, runInfo, hof
 
 def initGA(populationSize, processPool):

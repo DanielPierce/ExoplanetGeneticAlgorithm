@@ -50,7 +50,11 @@ def getPathsFromName(pathToInput, pathToOutput, inputName, outputName):
         populationOutputPath = pathToOutput + outputName + "_POP.csv"
         runDataOutputPath = pathToOutput + outputName + "_RUNDATA.txt"
         bestIndivOutputPath = pathToOutput + outputName + "_BEST.json"
-        paths = {'inputFilePath':inputFilePath, 'fitsOutputPath':fitsOutputPath, 'populationOutputPath':populationOutputPath, 'runDataOutputPath':runDataOutputPath, 'bestIndivOutputPath':bestIndivOutputPath}
+        popHistoryOutputPath = pathToOutput + outputName + "_PHISTORY.json"
+        timeHistoryOutputPath = pathToOutput + outputName + "_THISTORY.json"
+        paths = {'inputFilePath':inputFilePath, 'fitsOutputPath':fitsOutputPath, 'populationOutputPath':populationOutputPath, 
+                 'runDataOutputPath':runDataOutputPath, 'bestIndivOutputPath':bestIndivOutputPath, 
+                 'popHistoryOutputPath':popHistoryOutputPath, 'timeHistoryOutputPath':timeHistoryOutputPath}
         return paths
 
 def getInputInfoFromArg(pathArg):
@@ -66,11 +70,13 @@ def getInputInfoFromArg(pathArg):
         return pathToFile, fileName
 
 def printPaths(paths):
-    print(f"InputPath:  {paths['inputFilePath']}")
-    print(f"OutputFits: {paths['fitsOutputPath']}")
-    print(f"Population: {paths['populationOutputPath']}")
-    print(f"Run data:   {paths['runDataOutputPath']}")
-    print(f"Best Indiv: {paths['bestIndivOutputPath']}")
+    print(f"InputPath:    {paths['inputFilePath']}")
+    print(f"OutputFits:   {paths['fitsOutputPath']}")
+    print(f"Population:   {paths['populationOutputPath']}")
+    print(f"Run data:     {paths['runDataOutputPath']}")
+    print(f"Best indiv:   {paths['bestIndivOutputPath']}")
+    print(f"Pop history:  {paths['runDataOutputPath']}")
+    print(f"Time history: {paths['bestIndivOutputPath']}")
 
 def printConfig(settings):
     print(f"Pop  : {settings['populationSize']} which is a {type(settings['populationSize'])}")
