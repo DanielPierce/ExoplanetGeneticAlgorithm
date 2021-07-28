@@ -37,25 +37,28 @@ def initializeChildProcesses(target, timesteps):
     const.skippedTimesteps = timesteps
 
 def main():
-    populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug = input.getSettingsFromConf()
-    settings = [populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug]
-    inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = input.getIOFromInput(sys.argv, debug)
+    runSettings = input.getSettingsFromConf()
+    paths = input.getIOFromInput(sys.argv, runSettings['debugMode'])
 
     try:
-        helpers.targetCurve = lk.read(inputFilePath)
+        helpers.targetCurve = lk.read(paths['inputFilePath'])
     except FileNotFoundError:
-        print(f"ERROR: File {inputFilePath} does not exist\nEXITING")
+        print(f"ERROR: File {paths['inputFilePath']} does not exist\nEXITING")
         sys.exit(-1)
-    const.skippedTimesteps = timestepsToSkip
+    const.skippedTimesteps = runSettings['timestepsToSkip']
 
-    threadPool = mp.Pool(numChildProcesses, initializeChildProcesses, [helpers.targetCurve, timestepsToSkip])
-    finalPopulation, generationTimings, runInfo, hof = ga.runGA(threadPool, populationSize, numGenerations)
+    threadPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
+    finalPopulation, generationTimings, runInfo, hof = ga.runGA(threadPool, runSettings['populationSize'], runSettings['numGenerations'])
     print("Done with GA, starting save")
     bestIndividual = hof[0]
-    output.saveBestIndividual(bestIndividual, bestIndivOutputPath)
-    output.saveRunData(runInfo, settings, generationTimings, runDataOutputPath)
-    output.savePopulation(finalPopulation, populationOutputPath)
-    output.saveLightcurve(bestIndividual, fitsOutputPath)
+    output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
+    print("Saved best individual")
+    output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
+    print("Saved run data")
+    output.savePopulation(finalPopulation, paths['populationOutputPath'])
+    print("Saved population")
+    output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
+    print("Saved .fits file")
     print("Done saving!\nExiting properly...")
     
 

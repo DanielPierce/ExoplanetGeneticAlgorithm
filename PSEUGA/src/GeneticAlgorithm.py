@@ -81,11 +81,12 @@ def runGA(processPool, populationSize, numGenerations):
         popStats = calculatePopStatistics(pop)
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
         printGenerationData(popStats, timeStats, g)
-        
+
     popStats = calculatePopStatistics(pop)
     veryEnd = time.perf_counter()
     print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
-    return pop, timings, [CXPB, MUTPB, popStats['avgFitness'], popStats['stdFitness'], popStats['minFitness'], popStats['maxFitness']], hof
+    runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats}
+    return pop, timings, runInfo, hof
 
 
 def runGeneration(pop, processPool):
