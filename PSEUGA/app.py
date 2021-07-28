@@ -1,5 +1,7 @@
 
 
+import datetime
+import time
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
 import PSEUGA.src.GeneticAlgorithm as ga
@@ -47,19 +49,22 @@ def main():
         sys.exit(-1)
     const.skippedTimesteps = runSettings['timestepsToSkip']
 
-    threadPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
-    finalPopulation, generationTimings, runInfo, hof = ga.runGA(threadPool, runSettings['populationSize'], runSettings['numGenerations'])
+    processPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
+    
+    print(f'Starting GA at {datetime.datetime.now()}')
+    veryBeginning = time.perf_counter()
+    pop = ga.initGA(runSettings["populationSize"], processPool)
+    finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, runSettings['numGenerations'], pop)
+    veryEnd = time.perf_counter()
+    print(f"{runSettings['numGenerations']} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
+
     print("Done with GA, starting save")
     bestIndividual = hof[0]
     output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
-    print("Saved best individual")
     output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
-    print("Saved run data")
     output.savePopulation(finalPopulation, paths['populationOutputPath'])
-    print("Saved population")
     output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
-    print("Saved .fits file")
-    print("Done saving!\nExiting properly...")
+    print("Done saving!\n--+-- RUN COMPLETE --+--")
     
 
 if __name__ == "__main__":

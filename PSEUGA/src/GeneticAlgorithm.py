@@ -31,41 +31,11 @@ toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 
-def runGA(processPool, populationSize, numGenerations):
-    global hof
-    print(f'Starting GA at {datetime.now()}')
-    veryBeginning = time.perf_counter()
+def runGA(processPool, numGenerations, pop):
 
     timings = []
-    hof = tools.HallOfFame(3)
-    pop = toolbox.population(n=populationSize)
-    tic = time.perf_counter()
-    tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
-    pop = tempPop
-    toc = time.perf_counter()
-    print(f"Randomized individuals in {toc - tic:0.4f} seconds")
-
-    # Evaluate the entire populationprint("first fitness")
-    tic = time.perf_counter()
-    fitnesses = list(processPool.map(toolbox.evaluate, pop))
-    toc = time.perf_counter()
-    print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
-
-    for ind, fit in zip(pop, fitnesses):
-        ind.fitness.values = fit
-
-    # CXPB  is the probability with which two individuals
-    #       are crossed
-    #
-    # MUTPB is the probability for mutating an individual
-    global CXPB, MUTPB
-    #increase prob of crossover? try 0.9
-    CXPB, MUTPB = 0.9, 0.4
-    # Extracting all the fitnesses of 
-    fits = [ind.fitness.values[0] for ind in pop]
-        # Variable keeping track of the number of generations
+    # Variable keeping track of the number of generations
     g = 0
-    
     # Begin the evolution
     while g < numGenerations:
         # A new generation
@@ -83,11 +53,34 @@ def runGA(processPool, populationSize, numGenerations):
         printGenerationData(popStats, timeStats, g)
 
     popStats = calculatePopStatistics(pop)
-    veryEnd = time.perf_counter()
-    print(f"{g} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
     runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats}
     return pop, timings, runInfo, hof
 
+def initGA(populationSize, processPool):
+    global hof
+    global CXPB, MUTPB
+
+    hof = tools.HallOfFame(3)
+    pop = toolbox.population(n=populationSize)
+    tic = time.perf_counter()
+    tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
+    pop = tempPop
+    toc = time.perf_counter()
+    print(f"Randomized individuals in {toc - tic:0.4f} seconds")
+
+    # Evaluate the entire population
+    tic = time.perf_counter()
+    fitnesses = list(processPool.map(toolbox.evaluate, pop))
+    toc = time.perf_counter()
+    print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
+
+    for ind, fit in zip(pop, fitnesses):
+        ind.fitness.values = fit
+
+    # CXPB  is the probability with which two individuals are crossed
+    # MUTPB is the probability for mutating an individual
+    CXPB, MUTPB = 0.9, 0.4
+    return pop
 
 def runGeneration(pop, processPool):
     # Select the next generation individuals
