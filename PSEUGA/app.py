@@ -1,8 +1,12 @@
 
 
+import datetime
+import time
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
 import PSEUGA.src.GeneticAlgorithm as ga
+import PSEUGA.vizualization.visualizer as viz
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
 
 import lightkurve as lk
 import numpy as np
@@ -37,26 +41,51 @@ def initializeChildProcesses(target, timesteps):
     const.skippedTimesteps = timesteps
 
 def main():
-    populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug = input.getSettingsFromConf()
-    settings = [populationSize, numGenerations, limbDarkeningType, timestepsToSkip, numChildProcesses, debug]
-    inputFilePath, fitsOutputPath, populationOutputPath, runDataOutputPath, bestIndivOutputPath = input.getIOFromInput(sys.argv, debug)
+    runSettings = input.getSettingsFromConf()
+    paths = input.getIOFromInput(sys.argv, runSettings['debugMode'])
 
     try:
-        helpers.targetCurve = lk.read(inputFilePath)
+        helpers.targetCurve = lk.read(paths['inputFilePath'])
     except FileNotFoundError:
-        print(f"ERROR: File {inputFilePath} does not exist\nEXITING")
+        print(f"ERROR: File {paths['inputFilePath']} does not exist\nEXITING")
         sys.exit(-1)
-    const.skippedTimesteps = timestepsToSkip
+    const.skippedTimesteps = runSettings['timestepsToSkip']
 
-    threadPool = mp.Pool(numChildProcesses, initializeChildProcesses, [helpers.targetCurve, timestepsToSkip])
-    finalPopulation, generationTimings, runInfo, hof = ga.runGA(threadPool, populationSize, numGenerations)
+    processPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
+    
+    print(f'Starting GA at {datetime.datetime.now()}')
+    veryBeginning = time.perf_counter()
+    pop = ga.initGA(runSettings["populationSize"], processPool)
+    finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, runSettings['numGenerations'], pop)
+    veryEnd = time.perf_counter()
+    print(f"{runSettings['numGenerations']} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
+
     print("Done with GA, starting save")
     bestIndividual = hof[0]
-    output.saveBestIndividual(bestIndividual, bestIndivOutputPath)
-    output.saveRunData(runInfo, settings, generationTimings, runDataOutputPath)
-    output.savePopulation(finalPopulation, populationOutputPath)
-    output.saveLightcurve(bestIndividual, fitsOutputPath)
-    print("Done saving!\nExiting properly...")
+    bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual)
+    startTime = time.perf_counter()
+    output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
+    bestIndivTime = time.perf_counter()
+    print(f"Save time for Best Individual: {bestIndivTime - startTime:2.4f}")
+    output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
+    runDataTime = time.perf_counter()
+    print(f"Save time for Run Data:        {runDataTime - bestIndivTime:2.4f}")
+    output.savePopulation(finalPopulation, paths['populationOutputPath'])
+    popTime = time.perf_counter()
+    print(f"Save time for Population:      {popTime - bestIndivTime:2.4f}")
+    output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
+    lightcurveTime = time.perf_counter()
+    print(f"Save time for Lightcurve:      {lightcurveTime - popTime:2.4f}")
+    output.savePopHistory(runInfo['popHistory'], paths['popHistoryOutputPath'])
+    popHistTime = time.perf_counter()
+    print(f"Save time for Pop History:     {popHistTime - lightcurveTime:2.4f}")
+    output.saveTimeHistory(runInfo['timeHistory'], paths['timeHistoryOutputPath'])
+    timeHistTime = time.perf_counter()
+    print(f"Save time for Time History:    {timeHistTime - popHistTime:2.4f}")
+    viz.createLightcurvePlot(bestCurve, paths['outputFolderPath']+'plot.png')
+    plotTime = time.perf_counter()
+    print(f"Save time for plotting:        {plotTime - timeHistTime:2.4f}")
+    print("Done saving!\n--+-- RUN COMPLETE --+--")
     
 
 if __name__ == "__main__":

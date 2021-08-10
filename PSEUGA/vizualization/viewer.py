@@ -1,10 +1,12 @@
 
 #%%
 #%matplotlib inline
-from traitlets.traitlets import Integer
+#from common.PlanetarySystem import PlanetarySystem
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
 import PSEUGA.common.PlanetarySystem
+import PSEUGA.src.inputhandling as input
+
 
 import lightkurve as lk
 import numpy as np
@@ -173,8 +175,10 @@ def testOpenLightcurve(filepath):
     return kurve
 
 def main():
-    getInputs()
-    openFiles()
+    #getInputs()
+    #openFiles()
+    paths = input.getIOFromInput(sys.argv, False)
+    print(paths)
 
 if __name__ == "__main__":
     main()

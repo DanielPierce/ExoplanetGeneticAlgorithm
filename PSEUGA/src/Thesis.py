@@ -1,3 +1,4 @@
+from PSEUGA.common.TimeStep import TimeStep
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
 from PSEUGA.common.Planet import Planet
@@ -45,7 +46,7 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2):
 
 def uniformSourceLightcurveAlgorithm(individual):
     baseFlux = individual[const.STARBASEFLUX]
-    overallFlux = [baseFlux for i in range(len(targetCurve.time))]
+    #overallFlux = [baseFlux for i in range(len(targetCurve.time))]
     notInRangeSkips = 0
     inRange = 0
     thisSystem = PlanetarySystem(individual)
@@ -54,13 +55,13 @@ def uniformSourceLightcurveAlgorithm(individual):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
         customCurve = CustomLightcurve(targetCurve)
-        rstar = thisSystem.CalculateStarAngularSize()
+        #rstar = thisSystem.CalculateStarAngularSize()
                                                                                                               
         thisSystem.CalculatePlanetaryPeriod(planetIndex)
         
-        zeroTime = dateparser.parse(customCurve.epochTime)
+        #zeroTime = customCurve.epochTime
         #myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
-        baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
+        #baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
         followUp = []
         baseCustomSteps = customCurve.getUnskippedTimesteps(const.skippedTimesteps)
         for currentStepIndex in baseCustomSteps:
@@ -81,8 +82,22 @@ def uniformSourceLightcurveAlgorithm(individual):
         followUpUnique = list(dict.fromkeys(followUp))
         for currentStep in followUpUnique:
             currentStep.flux = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+        planetCurves.append(customCurve)
     
-    return overallFlux
+    targetCustom = CustomLightcurve(targetCurve)
+    finalCurve = CustomLightcurve()
+    finalCurve.epochTime = targetCustom.epochTime
+    for i in range(len(targetCustom.timeSteps)):
+        if(len(thisSystem.planets) == 0):
+            continue
+        minFlux = planetCurves[0].timeSteps[i].flux
+        for j in range(1, len(planetCurves)):
+            if(planetCurves[j].timeSteps[i].flux < minFlux):
+                minFlux = planetCurves[j].timeSteps[i].flux
+        #minFlux = min(planetCurves, lambda c: c.timeSteps[i].flux)
+        newStep = TimeStep(targetCustom.timeSteps[i].secondsFromEpoch, minFlux)
+        finalCurve.timeSteps.append(newStep)
+    return finalCurve
 
 
 def calculateTimestep(timestep, thisPlanet, thisStar):
@@ -125,53 +140,14 @@ def getAngularSizeFromSizeAndDist(size, distance):
 
     return mpm.atan(trueRatio)
 
-def generateLightcurve(individual):
-    myTimes = targetCurve.time
-    #myFlux = [random.randrange(21200,21600,1)  * targetCurve.flux.unit for i in range(len(targetCurve.time))]
-    myFlux = uniformSourceLightcurveAlgorithm(individual)
-    if(myFlux is None):
-        myFlux = [0 for i in range(len(myTimes))]
-    myErr = [0 for i in range(len(myTimes))]
-    return lk.LightCurve(time=myTimes, flux=myFlux, flux_err=myErr)
-
-def evalOneMax(individual):
-    myLightCurve = generateLightcurve(individual)
-    if(myLightCurve is None):
-        return 0
-    diffs = [starFlux - calcFlux for starFlux, calcFlux in zip(targetCurve.flux.value, myLightCurve.flux.value)]
-    absDiff = [abs(i) for i in diffs]
-    numCounted = 0
-    for i in range(len(myLightCurve.flux)):
-        if(myLightCurve.flux[i] == -1):
-            absDiff[i] = 10000
-            numCounted += 1
-    # instead of checking only in a specific timestep, order timesteps by brightness and then do a distance function to see how far in time + brightness the dimmest timestep is, then next, etc, where fitness is sum of distances and trying to minimize that distance
-    print(f"In eval, counted {numCounted}")
-    return [statistics.mean(absDiff)]
-
-def sortLightcurves(myLightCurve):
-    targetFlux = targetCurve.flux.value.tolist()
-    targetTimes = targetCurve.time.iso.tolist()
-    currentFlux = myLightCurve.flux.value.tolist()
-    currentTimes = myLightCurve.time.iso.tolist()
-
-    targetSort = sorted(zip(targetFlux,targetTimes), key=lambda i: i[0], reverse=True)
-    currentSort = sorted(zip(currentFlux,currentTimes), key=lambda i: i[0], reverse=True)
-    return targetSort,currentSort
-    
-
 def evalOneMaxDist(individual):
-    myLightCurve = generateLightcurve(individual)
-    if(myLightCurve is None):
-        return 0
-    targetSort, currentSort = sortLightcurves(myLightCurve)
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual)
+    targetCustom = CustomLightcurve(targetCurve)
+    targetSorted = targetCustom.sortByFlux()
+    generatedSorted = generatedCustomCurve.sortByFlux()
     sumOfDists = 0
-    for i in range(len(targetSort)):
-        targetFlux, targetTime = targetSort[i]
-        currentFlux, currentTime = currentSort[i]
-        fluxDist = targetFlux - currentFlux
-        timeDist = dateparser.parse(targetTime) - dateparser.parse(currentTime)
-        sumOfDists = sumOfDists + math.sqrt(fluxDist * fluxDist + timeDist.total_seconds() * timeDist.total_seconds())
+    for i in range(len(generatedSorted.timeSteps)):
+        sumOfDists += targetSorted.timeSteps[i].distanceToTimestep(generatedSorted.timeSteps[i])
     return [sumOfDists]
 
 def lerp(a,b,c):

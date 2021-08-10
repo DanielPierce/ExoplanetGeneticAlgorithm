@@ -6,6 +6,8 @@ import math
 
 class TimeStep:
     def __init__(self, *args):
+        if not type(args[0]) is int:
+            raise TypeError("Seconds from epoch must be an int") 
         self.secondsFromEpoch = args[0]
         self.flux = None
         self.error = 0
