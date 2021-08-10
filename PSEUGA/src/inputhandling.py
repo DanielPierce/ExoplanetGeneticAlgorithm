@@ -2,6 +2,7 @@
 
 import configparser
 from datetime import datetime
+import shutil
 import sys
 import os
 
@@ -19,7 +20,7 @@ def getSettingsFromConf():
     numChildProcesses = int(config['ANALYSIS']['processes'])
     debug = bool(config['ANALYSIS']['debug'])
     runSettings = {'populationSize':populationSize, 'numGenerations':numGenerations, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug}
-    #printConfig(runSettings)
+    printConfig(runSettings)
     return runSettings
 
 def getIOFromInput(args, debug):
@@ -45,16 +46,23 @@ def getIOFromInput(args, debug):
     sys.exit(-1)
     
 def getPathsFromName(pathToInput, pathToOutput, inputName, outputName):
+        outputFolder = pathToOutput + outputName
+        outputPrefix = outputFolder + '/' + outputName
+        if os.path.isdir(outputFolder):
+            shutil.rmtree(outputFolder)
+        os.mkdir(pathToOutput + outputName)
+
         inputFilePath = pathToInput + inputName + '.fits'
-        fitsOutputPath = pathToOutput + outputName + "_OUT.fits"
-        populationOutputPath = pathToOutput + outputName + "_POP.csv"
-        runDataOutputPath = pathToOutput + outputName + "_RUNDATA.txt"
-        bestIndivOutputPath = pathToOutput + outputName + "_BEST.json"
-        popHistoryOutputPath = pathToOutput + outputName + "_PHISTORY.json"
-        timeHistoryOutputPath = pathToOutput + outputName + "_THISTORY.json"
-        paths = {'inputFilePath':inputFilePath, 'fitsOutputPath':fitsOutputPath, 'populationOutputPath':populationOutputPath, 
-                 'runDataOutputPath':runDataOutputPath, 'bestIndivOutputPath':bestIndivOutputPath, 
-                 'popHistoryOutputPath':popHistoryOutputPath, 'timeHistoryOutputPath':timeHistoryOutputPath}
+        fitsOutputPath = outputPrefix + "_OUT.fits"
+        populationOutputPath = outputPrefix + "_POP.csv"
+        runDataOutputPath = outputPrefix + "_RUNDATA.txt"
+        bestIndivOutputPath = outputPrefix + "_BEST.json"
+        popHistoryOutputPath = outputPrefix + "_PHISTORY.json"
+        timeHistoryOutputPath = outputPrefix + "_THISTORY.json"
+
+        paths = {'inputFilePath':inputFilePath, 'fitsOutputPath':fitsOutputPath, 'populationOutputPath':populationOutputPath, 'runDataOutputPath':runDataOutputPath, 
+                 'bestIndivOutputPath':bestIndivOutputPath, 'popHistoryOutputPath':popHistoryOutputPath, 'timeHistoryOutputPath':timeHistoryOutputPath, 
+                 'outputFolderPath':outputFolder + '/'}
         return paths
 
 def getInputInfoFromArg(pathArg):
@@ -79,9 +87,11 @@ def printPaths(paths):
     print(f"Time history: {paths['bestIndivOutputPath']}")
 
 def printConfig(settings):
+    print('----- CONFIG SETTINGS -----')
     print(f"Pop  : {settings['populationSize']} which is a {type(settings['populationSize'])}")
     print(f"Gens : {settings['numGenerations']} which is a {type(settings['numGenerations'])}")
     print(f"LimbD: {settings['limbDarkeningType']} which is a {type(settings['limbDarkeningType'])}")
     print(f"Skip : {settings['timestepsToSkip']} which is a {type(settings['timestepsToSkip'])}")
     print(f"Child: {settings['numChildProcesses']} which is a {type(settings['numChildProcesses'])}")
     print(f"Debug: {settings['debugMode']} which is a {type(settings['debugMode'])}")
+    print('')

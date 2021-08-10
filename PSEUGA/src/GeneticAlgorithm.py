@@ -74,7 +74,8 @@ def initGA(populationSize, processPool):
 
     # Evaluate the entire population
     tic = time.perf_counter()
-    fitnesses = list(processPool.map(toolbox.evaluate, pop))
+    #fitnesses = list(processPool.map(toolbox.evaluate, pop))
+    fitnesses = list(map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 
@@ -104,7 +105,8 @@ def runGeneration(pop, processPool):
             del mutant.fitness.values
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    #fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    fitnesses = map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
     # shuffle positions of population bc of positional crossover
