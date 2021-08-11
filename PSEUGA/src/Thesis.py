@@ -55,6 +55,7 @@ def uniformSourceLightcurveAlgorithm(individual):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
         customCurve = CustomLightcurve(targetCurve)
+        customCurve.setBaseFlux(thisSystem.star.flux)
         #rstar = thisSystem.CalculateStarAngularSize()
                                                                                                               
         thisSystem.CalculatePlanetaryPeriod(planetIndex)
@@ -90,6 +91,9 @@ def uniformSourceLightcurveAlgorithm(individual):
     for i in range(len(targetCustom.timeSteps)):
         if(len(thisSystem.planets) == 0):
             continue
+        if(i >= len(planetCurves[0].timeSteps)):
+            continue
+        #print(f"{i} {len(planetCurves)} {len(planetCurves[0].timeSteps)}")
         minFlux = planetCurves[0].timeSteps[i].flux
         for j in range(1, len(planetCurves)):
             if(planetCurves[j].timeSteps[i].flux < minFlux):

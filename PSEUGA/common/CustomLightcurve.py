@@ -4,6 +4,7 @@ import dateutil.parser as dateparser
 import PSEUGA.common.TimeStep as TimeStep
 import lightkurve
 import copy
+import astropy.units as u
 
 class CustomLightcurve:
     def __init__(self, *args):
@@ -24,7 +25,7 @@ class CustomLightcurve:
             self.timeSteps = []
             for i in range(len(kurve.time.iso)):
                 secondsFromEpoch = dateparser.parse(kurve.time.iso[i]) - dateparser.parse(kurve.time.iso[0])
-                self.timeSteps.append(TimeStep.TimeStep(secondsFromEpoch.seconds, kurve.flux[i], kurve.flux_err[i]))
+                self.timeSteps.append(TimeStep.TimeStep(secondsFromEpoch.seconds, kurve.flux[i].value, kurve.flux_err[i].value))
             if not type(self.epochTime) is datetime:
                 print(self.epochTime)
                 raise TypeError(f"Epoch time must be a datetime, currently is {type(self.epochTime)}")
@@ -68,13 +69,20 @@ class CustomLightcurve:
     def getUnskippedTimesteps(self, timestepsToSkip):
         unskipped = []
         for i in range(len(self.timeSteps), timestepsToSkip):
+            if i >= len(self.timeSteps):
+                continue
             unskipped.append(self.timeSteps[i])
         return unskipped
+    
+    def setBaseFlux(self, baseFluxValue):
+        for step in self.timeSteps:
+            step.flux = baseFluxValue
 
     def toXY(self):
         x = []
         y = []
         for step in self.timeSteps:
-            x.append(self.epochTime + timedelta(seconds=step.secondsFromEpoch))
+            #x.append(self.epochTime + timedelta(seconds=step.secondsFromEpoch)))
+            x.append(step.secondsFromEpoch)
             y.append(step.flux)
         return x,y
