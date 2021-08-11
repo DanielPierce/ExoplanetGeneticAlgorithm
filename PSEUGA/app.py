@@ -41,7 +41,7 @@ def initializeChildProcesses(target, timesteps):
     const.skippedTimesteps = timesteps
 
 def saveResults(hof, paths, runInfo, runSettings, generationTimings, finalPopulation):
-    print("Starting save process")
+    print("--+-- SAVING --+--")
     bestIndividual = hof[0]
     startTime = time.perf_counter()
     output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
@@ -106,7 +106,7 @@ def main():
     print(f"{runSettings['numGenerations']} generations complete in {sum(generationTimings):0.4f} seconds\n")
 
     saveResults(hof, paths, runInfo, runSettings, generationTimings, finalPopulation)
-    print("Done saving!")
+    print("\n--+-- ALL DONE --+--")
     
 
 if __name__ == "__main__":

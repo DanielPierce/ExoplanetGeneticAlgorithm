@@ -42,7 +42,7 @@ def runGA(processPool, numGenerations, pop):
     while g < numGenerations:
         # A new generation
         g = g + 1
-        print(f"--+-- Gen {g}/{numGenerations} --+--")
+        print(f"--+-- GEN {g}/{numGenerations} --+--")
 
         tic = time.perf_counter()
         runGeneration(pop, processPool)
