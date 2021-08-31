@@ -40,9 +40,47 @@ def initializeChildProcesses(target, timesteps):
     helpers.targetCurve = target
     const.skippedTimesteps = timesteps
 
+def saveResults(hof, paths, runInfo, runSettings, generationTimings, finalPopulation):
+    print("--+-- SAVING --+--")
+    bestIndividual = hof[0]
+    startTime = time.perf_counter()
+    output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
+    bestIndivTime = time.perf_counter()
+    print(f"Save time for Best Individual: {bestIndivTime - startTime:2.4f}s")
+    output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
+    runDataTime = time.perf_counter()
+    print(f"Save time for Run Data:        {runDataTime - bestIndivTime:2.4f}s")
+    output.savePopulation(finalPopulation, paths['populationOutputPath'])
+    popTime = time.perf_counter()
+    print(f"Save time for Population:      {popTime - bestIndivTime:2.4f}s")
+    output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
+    lightcurveTime = time.perf_counter()
+    print(f"Save time for Lightcurve:      {lightcurveTime - popTime:2.4f}s")
+    output.savePopHistory(runInfo['popHistory'], paths['popHistoryOutputPath'])
+    popHistTime = time.perf_counter()
+    print(f"Save time for Pop History:     {popHistTime - lightcurveTime:2.4f}s")
+    output.saveTimeHistory(runInfo['timeHistory'], paths['timeHistoryOutputPath'])
+    timeHistTime = time.perf_counter()
+    print(f"Save time for Time History:    {timeHistTime - popHistTime:2.4f}s")
+    bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual)
+    customTarget = CustomLightcurve(helpers.targetCurve)
+    viz.createLightcurvePlot(bestCurve, paths['outputFolderPath']+'GeneratedPlot.png')
+    viz.createLightcurvePlot(customTarget, paths['outputFolderPath']+'TargetPlot.png')
+    viz.createComparisonPlot(customTarget, bestCurve, paths['outputFolderPath']+'CompPlot.png')
+    plotTime = time.perf_counter()
+    print(f"Save time for plotting:        {plotTime - timeHistTime:2.4f}s")
+
+
 def main():
+    startupTime = time.perf_counter()
     runSettings = input.getSettingsFromConf()
+    ioFromInputTime = time.perf_counter()
+    print(f'Conf settings read in {ioFromInputTime - startupTime:2.4f} seconds')
+    
+    print('\n--+-- SETUP --+--')
     paths = input.getIOFromInput(sys.argv, runSettings['debugMode'])
+    setupTargetTime = time.perf_counter()
+    print(f'IO in {setupTargetTime - ioFromInputTime:2.4f} seconds')
 
     try:
         helpers.targetCurve = lk.read(paths['inputFilePath'])
@@ -50,42 +88,25 @@ def main():
         print(f"ERROR: File {paths['inputFilePath']} does not exist\nEXITING")
         sys.exit(-1)
     const.skippedTimesteps = runSettings['timestepsToSkip']
-
-    processPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
+    poolTime = time.perf_counter()
+    print(f'Set up target curve in {poolTime - setupTargetTime:2.4f} seconds')
     
-    print(f'Starting GA at {datetime.datetime.now()}')
-    veryBeginning = time.perf_counter()
-    pop = ga.initGA(runSettings["populationSize"], processPool)
-    finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, runSettings['numGenerations'], pop)
-    veryEnd = time.perf_counter()
-    print(f"{runSettings['numGenerations']} generations complete in {veryEnd - veryBeginning:0.4f} seconds")
+    processPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
+    startGATime = time.perf_counter()
+    print(f'Set up process pool in {startGATime - poolTime:2.4f} seconds')
+    
+    print('\n--+-- GA RUN --+--')
 
-    print("Done with GA, starting save")
-    bestIndividual = hof[0]
-    bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual)
-    startTime = time.perf_counter()
-    output.saveBestIndividual(bestIndividual, paths['bestIndivOutputPath'])
-    bestIndivTime = time.perf_counter()
-    print(f"Save time for Best Individual: {bestIndivTime - startTime:2.4f}")
-    output.saveRunData(runInfo, runSettings, generationTimings, paths['runDataOutputPath'])
-    runDataTime = time.perf_counter()
-    print(f"Save time for Run Data:        {runDataTime - bestIndivTime:2.4f}")
-    output.savePopulation(finalPopulation, paths['populationOutputPath'])
-    popTime = time.perf_counter()
-    print(f"Save time for Population:      {popTime - bestIndivTime:2.4f}")
-    output.saveLightcurve(bestIndividual, paths['fitsOutputPath'])
-    lightcurveTime = time.perf_counter()
-    print(f"Save time for Lightcurve:      {lightcurveTime - popTime:2.4f}")
-    output.savePopHistory(runInfo['popHistory'], paths['popHistoryOutputPath'])
-    popHistTime = time.perf_counter()
-    print(f"Save time for Pop History:     {popHistTime - lightcurveTime:2.4f}")
-    output.saveTimeHistory(runInfo['timeHistory'], paths['timeHistoryOutputPath'])
-    timeHistTime = time.perf_counter()
-    print(f"Save time for Time History:    {timeHistTime - popHistTime:2.4f}")
-    viz.createLightcurvePlot(bestCurve, paths['outputFolderPath']+'plot.png')
-    plotTime = time.perf_counter()
-    print(f"Save time for plotting:        {plotTime - timeHistTime:2.4f}")
-    print("Done saving!\n--+-- RUN COMPLETE --+--")
+    print(f'Starting GA at {datetime.datetime.now()}')
+    pop = ga.initGA(runSettings["populationSize"], processPool)
+    initGATime = time.perf_counter()
+    finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, runSettings['numGenerations'], pop)
+    print("--+-- RUN COMPLETE --+--")
+    print(f'Setup complete in {initGATime - startGATime:0.4f}')
+    print(f"{runSettings['numGenerations']} generations complete in {sum(generationTimings):0.4f} seconds\n")
+
+    saveResults(hof, paths, runInfo, runSettings, generationTimings, finalPopulation)
+    print("\n--+-- ALL DONE --+--")
     
 
 if __name__ == "__main__":

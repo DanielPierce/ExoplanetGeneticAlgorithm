@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import time
 import random
 import statistics
-import sys
 
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -42,7 +41,7 @@ def runGA(processPool, numGenerations, pop):
     while g < numGenerations:
         # A new generation
         g = g + 1
-        print(f"-- Generation {g}/{numGenerations} --")
+        print(f"--+-- GEN {g}/{numGenerations} --+--")
 
         tic = time.perf_counter()
         runGeneration(pop, processPool)
@@ -115,10 +114,10 @@ def runGeneration(pop, processPool):
     # Gather all the fitnesses in one list and print the stats
         
 def printGenerationData(popStats, timeStats, g):
-    print(f"  Min: {popStats['minFitness']}")
-    print(f"  Max: {popStats['maxFitness']}")
-    print(f"  Avg: {popStats['avgFitness']}")
-    print(f"  Std: {popStats['stdFitness']}")
+    print(f"Min: {popStats['minFitness']}")
+    print(f"Max: {popStats['maxFitness']}")
+    print(f"Avg: {popStats['avgFitness']}")
+    print(f"Std: {popStats['stdFitness']}")
     print(f"Generation {g} complete in {timeStats['currentTime']:0.4f} seconds, averaging {timeStats['avg']:0.1f} seconds per")
     print(f"Estimate {timeStats['timeRemaining']} seconds remaining, done at {timeStats['estCompletionTime']}")
 

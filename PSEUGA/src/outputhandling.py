@@ -36,8 +36,9 @@ def saveRunData(runData, settings, timings, filepath):
     dataFile.close()
 
 def saveLightcurve(individual, filepath):
-    lc = helpers.uniformSourceLightcurveAlgorithm(individual)
+    #lc = helpers.uniformSourceLightcurveAlgorithm(individual)
     #hdu = lc.to_fits(filepath, overwrite=True,TELESCOP='SIMULATION')
+    pass
 
 def savePopulation(pop, filepath):
     popArray = np.array(pop)

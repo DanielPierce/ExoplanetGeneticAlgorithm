@@ -87,11 +87,10 @@ def printPaths(paths):
     print(f"Time history: {paths['bestIndivOutputPath']}")
 
 def printConfig(settings):
-    print('----- CONFIG SETTINGS -----')
-    print(f"Pop  : {settings['populationSize']} which is a {type(settings['populationSize'])}")
-    print(f"Gens : {settings['numGenerations']} which is a {type(settings['numGenerations'])}")
-    print(f"LimbD: {settings['limbDarkeningType']} which is a {type(settings['limbDarkeningType'])}")
-    print(f"Skip : {settings['timestepsToSkip']} which is a {type(settings['timestepsToSkip'])}")
-    print(f"Child: {settings['numChildProcesses']} which is a {type(settings['numChildProcesses'])}")
-    print(f"Debug: {settings['debugMode']} which is a {type(settings['debugMode'])}")
-    print('')
+    print('--+-- CONF SETTINGS --+--')
+    print(f"Pop  : {settings['populationSize']}")
+    print(f"Gens : {settings['numGenerations']}")
+    print(f"LimbD: {settings['limbDarkeningType']}")
+    print(f"Skip : {settings['timestepsToSkip']}")
+    print(f"Child: {settings['numChildProcesses']}")
+    print(f"Debug: {settings['debugMode']}")

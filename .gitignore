@@ -136,3 +136,4 @@ dmypy.json
 multiprocessingexample.py
 *.json
 PSEUGA/ExoplanetGA.slurm
+*.png
