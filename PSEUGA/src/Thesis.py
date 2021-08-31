@@ -88,7 +88,6 @@ def uniformSourceLightcurveAlgorithm(individual):
     targetCustom = CustomLightcurve(targetCurve)
     finalCurve = CustomLightcurve()
     finalCurve.epochTime = targetCustom.epochTime
-    thisSystem.PrettyPrint()
     for i in range(len(targetCustom.timeSteps)):
         if(len(thisSystem.planets) == 0):
             continue
