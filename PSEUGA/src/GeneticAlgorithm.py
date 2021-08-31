@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 import time
 import random
 import statistics
-import sys
 
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))

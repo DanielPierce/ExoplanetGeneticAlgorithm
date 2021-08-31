@@ -88,11 +88,18 @@ def uniformSourceLightcurveAlgorithm(individual):
     targetCustom = CustomLightcurve(targetCurve)
     finalCurve = CustomLightcurve()
     finalCurve.epochTime = targetCustom.epochTime
+    thisSystem.PrettyPrint()
     for i in range(len(targetCustom.timeSteps)):
         if(len(thisSystem.planets) == 0):
             continue
-        if(i >= len(planetCurves[0].timeSteps)):
-            continue
+        try:
+            if(i >= len(planetCurves[0].timeSteps)):
+                continue
+        except IndexError:
+            print(f"Size of system's planets array: {len(thisSystem.planets)}")
+            print(f"Size of planetCurves array: {len(planetCurves)}")
+            thisSystem.PrettyPrint()
+            exit()
         #print(f"{i} {len(planetCurves)} {len(planetCurves[0].timeSteps)}")
         minFlux = planetCurves[0].timeSteps[i].flux
         for j in range(1, len(planetCurves)):

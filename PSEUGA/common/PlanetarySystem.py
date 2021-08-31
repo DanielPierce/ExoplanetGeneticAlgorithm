@@ -37,3 +37,14 @@ class PlanetarySystem:
         mu = const.GRAVITATIONALCONSTANT * self.star.mass # m^3 kg^-1 s^-2 * kg = m^3 s^-2
         thisPlanet.CalculatePeriod(mu)
 
+    def PrettyPrint(self):
+        if self.numActivePlanets > 0:
+            for i in range(self.numActivePlanets):
+                print(f"--- Planet {i} ---")
+                self.planets[i].PrettyPrint()
+        else:
+            print("No active planets")
+        print("--- Star ---")
+        self.star.PrettyPrint()
+        
+

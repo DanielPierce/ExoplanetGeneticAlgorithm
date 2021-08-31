@@ -58,3 +58,14 @@ class Planet:
         trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
         return trueAnomaly
 
+    def PrettyPrint(self):
+        print(f"Radius: {self.radius} km")
+        print(f"Eccentricity: {self.ecc}")
+        print(f"Semimajor Axis: {self.sma} km")
+        print(f"Inclination: {self.inc} rads")
+        print(f"Longitude of Ascending Node: {self.loan} rads")
+        print(f"Argument of Periapse: {self.aop} rads")
+        print(f"Mean Anomaly: {self.ma} rads")
+        if(self.period != 0):
+            print(f"Period: {self.period} km")
+
