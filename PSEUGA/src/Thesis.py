@@ -89,12 +89,13 @@ def uniformSourceLightcurveAlgorithm(individual):
     finalCurve = CustomLightcurve()
     finalCurve.epochTime = targetCustom.epochTime
     for i in range(len(targetCustom.timeSteps)):
-        if(len(thisSystem.planets) == 0):
+        if(thisSystem.numActivePlanets == 0):
             continue
         try:
             if(i >= len(planetCurves[0].timeSteps)):
                 continue
         except IndexError:
+            print("Hit index error, dumping current data")
             print(f"Size of system's planets array: {len(thisSystem.planets)}")
             print(f"Size of planetCurves array: {len(planetCurves)}")
             thisSystem.PrettyPrint()

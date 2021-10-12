@@ -5,12 +5,14 @@ from deap import creator
 from deap import tools
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
+import PSEUGA.src.outputhandling as out
 
 from datetime import datetime, timedelta
 import time
 import random
 import statistics
 
+import sys
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -45,6 +47,7 @@ def runGA(processPool, numGenerations, pop):
 
         tic = time.perf_counter()
         runGeneration(pop, processPool)
+        out.saveGenerationData(g, 'test', pop, hof)
         toc = time.perf_counter()
         thisGenTime = toc - tic
         timings.append(thisGenTime)
@@ -54,6 +57,7 @@ def runGA(processPool, numGenerations, pop):
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
         timeStatsOverTime.append(timeStats)
         printGenerationData(popStats, timeStats, g)
+        sys.stdout.flush()
 
     popStats = calculatePopStatistics(pop)
     runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats, 'popHistory':popStatsOverTime, 'timeHistory':timeStatsOverTime}
@@ -74,7 +78,7 @@ def initGA(populationSize, processPool):
     # Evaluate the entire population
     tic = time.perf_counter()
     #fitnesses = list(processPool.map(toolbox.evaluate, pop))
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = list(processPool.map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 
@@ -104,8 +108,8 @@ def runGeneration(pop, processPool):
             del mutant.fitness.values
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    #fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
-    fitnesses = map(toolbox.evaluate, invalid_ind)
+    fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    #fitnesses = map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
     # shuffle positions of population bc of positional crossover

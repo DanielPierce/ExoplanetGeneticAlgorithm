@@ -1,10 +1,25 @@
 
 import configparser
 import sys
+import os
 import jsonpickle
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
 import PSEUGA.src.Thesis as helpers
 import numpy as np
+
+#rewrite this as a class which can store the filepaths and things on its own
+#input too, maybe together for sharing?
+
+def saveGenerationData(genNum, runName, pop, hof):
+    #rewrite this to not just save to default
+    filepath = 'PSEUGA/output/default/historicaldata/gen' + str(genNum) + '/'
+    os.makedirs(filepath)
+    saveLightcurve(hof[0], filepath + 'bestCurve.csv')
+    saveBestIndividual(hof[0], filepath + 'bestIndiv.json')
+    savePopulation(pop, filepath + 'population.csv')
+
+
 
 def saveBestIndividual(individual, filepath):
     system = PlanetarySystem(individual)
@@ -36,8 +51,15 @@ def saveRunData(runData, settings, timings, filepath):
     dataFile.close()
 
 def saveLightcurve(individual, filepath):
-    #lc = helpers.uniformSourceLightcurveAlgorithm(individual)
-    #hdu = lc.to_fits(filepath, overwrite=True,TELESCOP='SIMULATION')
+    lc = helpers.uniformSourceLightcurveAlgorithm(individual)
+    times = []
+    fluxes = []
+    
+    for step in lc.timeSteps:
+        times.append(step.secondsFromEpoch)
+        fluxes.append(step.flux)
+    print("%s times in times"% len(times))
+    np.savetxt(filepath,(times,fluxes), delimiter=',')
     pass
 
 def savePopulation(pop, filepath):

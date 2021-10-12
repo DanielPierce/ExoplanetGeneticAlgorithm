@@ -90,14 +90,17 @@ def main():
     const.skippedTimesteps = runSettings['timestepsToSkip']
     poolTime = time.perf_counter()
     print(f'Set up target curve in {poolTime - setupTargetTime:2.4f} seconds')
-    
+    sys.stdout.flush()
+
     processPool = mp.Pool(runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, runSettings['timestepsToSkip']])
     startGATime = time.perf_counter()
     print(f'Set up process pool in {startGATime - poolTime:2.4f} seconds')
-    
+    sys.stdout.flush()
+
     print('\n--+-- GA RUN --+--')
 
     print(f'Starting GA at {datetime.datetime.now()}')
+    sys.stdout.flush()
     pop = ga.initGA(runSettings["populationSize"], processPool)
     initGATime = time.perf_counter()
     finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, runSettings['numGenerations'], pop)
