@@ -14,6 +14,8 @@ import statistics
 
 import sys
 
+from PSEUGA.src.IOHandlers import InputHandler, OutputHandler
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
@@ -37,6 +39,8 @@ def runGA(processPool, numGenerations, pop):
     timings = []
     popStatsOverTime = []
     timeStatsOverTime = []
+    inputH = InputHandler.getInstance()
+    outputH = OutputHandler.getInstance()
     # Variable keeping track of the number of generations
     g = 0
     # Begin the evolution
@@ -57,6 +61,10 @@ def runGA(processPool, numGenerations, pop):
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
         timeStatsOverTime.append(timeStats)
         printGenerationData(popStats, timeStats, g)
+        print('Input: ')
+        print(inputH)
+        print('Output: ')
+        print(outputH)
         sys.stdout.flush()
 
     popStats = calculatePopStatistics(pop)
