@@ -53,7 +53,7 @@ def getPathsFromName(pathToInput, pathToOutput, inputName, outputName):
         os.mkdir(pathToOutput + outputName)
 
         inputFilePath = pathToInput + inputName + '.fits'
-        fitsOutputPath = outputPrefix + "_OUT.fits"
+        fitsOutputPath = outputPrefix + "_OUT.csv"
         populationOutputPath = outputPrefix + "_POP.csv"
         runDataOutputPath = outputPrefix + "_RUNDATA.txt"
         bestIndivOutputPath = outputPrefix + "_BEST.json"

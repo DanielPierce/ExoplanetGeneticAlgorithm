@@ -11,6 +11,9 @@ import time
 import random
 import statistics
 
+import sys
+
+from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -35,6 +38,8 @@ def runGA(processPool, numGenerations, pop):
     timings = []
     popStatsOverTime = []
     timeStatsOverTime = []
+    input = Input.getInstance()
+    output = Output.getInstance()
     # Variable keeping track of the number of generations
     g = 0
     # Begin the evolution
@@ -45,6 +50,12 @@ def runGA(processPool, numGenerations, pop):
 
         tic = time.perf_counter()
         runGeneration(pop, processPool)
+
+        if(input.runSettings['debugMode']):
+            output.saveGenerationData(g, pop, hof)
+        elif(g % input.runSettings['outputGens'] == 0):
+            output.saveGenerationData(g, pop, hof)
+
         toc = time.perf_counter()
         thisGenTime = toc - tic
         timings.append(thisGenTime)
@@ -54,17 +65,19 @@ def runGA(processPool, numGenerations, pop):
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
         timeStatsOverTime.append(timeStats)
         printGenerationData(popStats, timeStats, g)
+        sys.stdout.flush()
 
     popStats = calculatePopStatistics(pop)
     runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats, 'popHistory':popStatsOverTime, 'timeHistory':timeStatsOverTime}
     return pop, timings, runInfo, hof
 
-def initGA(populationSize, processPool):
+def initGA(processPool):
     global hof
     global CXPB, MUTPB
 
+    input = Input.getInstance()
     hof = tools.HallOfFame(3)
-    pop = toolbox.population(n=populationSize)
+    pop = toolbox.population(n=input.runSettings['populationSize'])
     tic = time.perf_counter()
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
     pop = tempPop
@@ -74,7 +87,7 @@ def initGA(populationSize, processPool):
     # Evaluate the entire population
     tic = time.perf_counter()
     #fitnesses = list(processPool.map(toolbox.evaluate, pop))
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = list(processPool.map(toolbox.evaluate, pop))
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 
@@ -104,8 +117,8 @@ def runGeneration(pop, processPool):
             del mutant.fitness.values
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    #fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
-    fitnesses = map(toolbox.evaluate, invalid_ind)
+    fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    #fitnesses = map(toolbox.evaluate, invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
     # shuffle positions of population bc of positional crossover
