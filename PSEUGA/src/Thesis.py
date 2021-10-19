@@ -17,6 +17,8 @@ import time
 import mpmath as mpm
 import copy
 
+from PSEUGA.src.IOHandlers import InputHandler
+
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
 
@@ -51,6 +53,7 @@ def uniformSourceLightcurveAlgorithm(individual):
     inRange = 0
     thisSystem = PlanetarySystem(individual)
     planetCurves = []
+    input = InputHandler.getInstance()
     for planetIndex in range(thisSystem.numActivePlanets):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
@@ -64,7 +67,7 @@ def uniformSourceLightcurveAlgorithm(individual):
         #myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
         #baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
         followUp = []
-        baseCustomSteps = customCurve.getUnskippedTimesteps(const.skippedTimesteps)
+        baseCustomSteps = customCurve.getUnskippedTimesteps(input.runSettings['timestepsToSkip'])
         for currentStepIndex in baseCustomSteps:
             currentStep = baseCustomSteps[currentStepIndex]
             #myFlux[i] = calculateTimestepFromTime(i, zeroTime, thisPlanet, thisSystem.star)
@@ -74,9 +77,9 @@ def uniformSourceLightcurveAlgorithm(individual):
             # once done with this for, remove duplicates from follup and then calculate all those
             if(currentStep.flux != baseFlux):
                 inRange = inRange + 1
-                for x in range(currentStepIndex - const.skippedTimesteps, currentStepIndex):
+                for x in range(currentStepIndex - input.runSettings['timestepsToSkip'], currentStepIndex):
                     followUp.append(customCurve.timeSteps[x])
-                for x in range(currentStepIndex,currentStepIndex + const.skippedTimesteps):
+                for x in range(currentStepIndex,currentStepIndex + input.runSettings['timestepsToSkip']):
                     followUp.append(customCurve.timeSteps[x])
             else:
                 notInRangeSkips = notInRangeSkips + 1

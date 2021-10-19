@@ -5,11 +5,14 @@ from datetime import datetime
 import shutil
 import sys
 import os
+from deap.tools import init
 
 import jsonpickle
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
 import PSEUGA.src.Thesis as helpers
 import numpy as np
+
+import copy
 
 class InputHandler:
     __instance = None
@@ -142,10 +145,13 @@ class OutputHandler:
         OutputHandler.__instance = self 
 
     def saveBestIndividual(self, individual):
+        self.saveBestIndividualAt(individual, self.paths['bestIndivOutputPath'])
+
+    def saveBestIndividualAt(self, individual, path):
         system = PlanetarySystem(individual)
         jsonSystem = jsonpickle.encode(system)
         
-        dataFile = open(self.paths['bestIndivOutputPath'], 'w')
+        dataFile = open(path, 'w')
         dataFile.write(jsonSystem)
         dataFile.close()
 
@@ -171,15 +177,25 @@ class OutputHandler:
         dataFile.close()
 
     def saveLightcurve(self, individual):
-        #lc = helpers.uniformSourceLightcurveAlgorithm(individual)
-        #hdu = lc.to_fits(filepath, overwrite=True,TELESCOP='SIMULATION')
-        #self.paths['fitsOutputPath']
-        pass
+        self.saveLightcurveAt(individual, self.paths['fitsOutputPath'])
+
+    def saveLightcurveAt(self, individual, path):
+        lc = helpers.uniformSourceLightcurveAlgorithm(individual)
+        #need to turn lc into a lightkurve object rather than custom lightcurve object, then remove .csv postfix
+        #hdu = lc.to_fits(path, overwrite=True,TELESCOP='SIMULATION')
+        time, flux = lc.toXY()
+        arr = np.array([time,flux])
+        #arr.tofile(path, sep = ',')
+        np.savetxt(path, arr, delimiter = ',')
+
 
     def savePopulation(self, pop):
+        self.savePopulationAt(pop, self.paths['populationOutputPath'])
+    
+    def savePopulationAt(self, pop, path):
         popArray = np.array(pop)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
-        np.savetxt(self.paths['populationOutputPath'], popArray, delimiter=',')
+        np.savetxt(path, popArray, delimiter=',')
 
     def savePopHistory(self, pop):
         jsonPop = jsonpickle.encode(pop)
@@ -194,3 +210,12 @@ class OutputHandler:
         dataFile = open(self.paths['timeHistoryOutputPath'], 'w')
         dataFile.write(jsonTimingData)
         dataFile.close()
+
+    def saveGenerationData(self, genNum, pop, hof):
+        #rewrite this to not just save to default
+        input = InputHandler.getInstance()
+        filepath = 'PSEUGA/output/' + input.runName + '/historicaldata/gen' + str(genNum) + '/'
+        os.makedirs(filepath)
+        self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
+        self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
+        self.savePopulationAt(pop, filepath + 'population.csv')

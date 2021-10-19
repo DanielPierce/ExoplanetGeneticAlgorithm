@@ -10,6 +10,7 @@ from PSEUGA.common.CustomLightcurve import CustomLightcurve
 
 import lightkurve as lk
 import numpy as np
+import copy
 
 
 import sys, getopt
@@ -36,11 +37,16 @@ def printResults(pop):
     print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
-def initializeChildProcesses(target, timesteps):
+def initializeChildProcesses(target):
     helpers.targetCurve = target
-    const.skippedTimesteps = timesteps
+    input = Input()
+    input.getSettingsFromConf()
+    input.GetIOFromInput(sys.argv)
+    output = Output(input)
 
-def saveResults(hof, runInfo, runSettings, generationTimings, finalPopulation):
+def saveResults(hof, runInfo, generationTimings, finalPopulation):
+    input = Input.getInstance()
+    runSettings = input.runSettings
     output = Output.getInstance()
     print("--+-- SAVING --+--")
     bestIndividual = hof[0]
@@ -92,12 +98,11 @@ def main():
     except FileNotFoundError:
         print(f"ERROR: File {input.paths['inputFilePath']} does not exist\nEXITING")
         sys.exit(-1)
-    const.skippedTimesteps = input.runSettings['timestepsToSkip']
     poolTime = time.perf_counter()
     print(f'Set up target curve in {poolTime - setupTargetTime:2.4f} seconds')
     sys.stdout.flush()
 
-    processPool = mp.Pool(input.runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, input.runSettings['timestepsToSkip']])
+    processPool = mp.Pool(input.runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve])
     startGATime = time.perf_counter()
     print(f'Set up process pool in {startGATime - poolTime:2.4f} seconds')
     sys.stdout.flush()
@@ -106,14 +111,14 @@ def main():
 
     print(f'Starting GA at {datetime.datetime.now()}')
     sys.stdout.flush()
-    pop = ga.initGA(input.runSettings["populationSize"], processPool)
+    pop = ga.initGA( processPool)
     initGATime = time.perf_counter()
     finalPopulation, generationTimings, runInfo, hof = ga.runGA(processPool, input.runSettings['numGenerations'], pop)
     print("--+-- RUN COMPLETE --+--")
     print(f'Setup complete in {initGATime - startGATime:0.4f}')
     print(f"{input.runSettings['numGenerations']} generations complete in {sum(generationTimings):0.4f} seconds\n")
 
-    saveResults(hof, runInfo, input.runSettings, generationTimings, finalPopulation)
+    saveResults(hof, runInfo, generationTimings, finalPopulation)
     print("\n--+-- ALL DONE --+--")
     
 

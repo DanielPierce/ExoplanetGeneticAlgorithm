@@ -5,7 +5,6 @@ from deap import creator
 from deap import tools
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
-import PSEUGA.src.outputhandling as out
 
 from datetime import datetime, timedelta
 import time
@@ -14,7 +13,7 @@ import statistics
 
 import sys
 
-from PSEUGA.src.IOHandlers import InputHandler, OutputHandler
+from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -39,8 +38,8 @@ def runGA(processPool, numGenerations, pop):
     timings = []
     popStatsOverTime = []
     timeStatsOverTime = []
-    inputH = InputHandler.getInstance()
-    outputH = OutputHandler.getInstance()
+    input = Input.getInstance()
+    output = Output.getInstance()
     # Variable keeping track of the number of generations
     g = 0
     # Begin the evolution
@@ -51,7 +50,12 @@ def runGA(processPool, numGenerations, pop):
 
         tic = time.perf_counter()
         runGeneration(pop, processPool)
-        out.saveGenerationData(g, 'test', pop, hof)
+
+        if(input.runSettings['debugMode']):
+            output.saveGenerationData(g, pop, hof)
+        elif(g % input.runSettings['outputGens'] == 0):
+            output.saveGenerationData(g, pop, hof)
+
         toc = time.perf_counter()
         thisGenTime = toc - tic
         timings.append(thisGenTime)
@@ -61,22 +65,19 @@ def runGA(processPool, numGenerations, pop):
         timeStats = calculateTimeStatistics(timings, numGenerations, g)
         timeStatsOverTime.append(timeStats)
         printGenerationData(popStats, timeStats, g)
-        print('Input: ')
-        print(inputH)
-        print('Output: ')
-        print(outputH)
         sys.stdout.flush()
 
     popStats = calculatePopStatistics(pop)
     runInfo = {'CXPB':CXPB, 'MUTPB':MUTPB, 'stats':popStats, 'popHistory':popStatsOverTime, 'timeHistory':timeStatsOverTime}
     return pop, timings, runInfo, hof
 
-def initGA(populationSize, processPool):
+def initGA(processPool):
     global hof
     global CXPB, MUTPB
 
+    input = Input.getInstance()
     hof = tools.HallOfFame(3)
-    pop = toolbox.population(n=populationSize)
+    pop = toolbox.population(n=input.runSettings['populationSize'])
     tic = time.perf_counter()
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
     pop = tempPop
