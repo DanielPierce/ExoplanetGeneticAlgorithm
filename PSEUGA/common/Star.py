@@ -1,6 +1,7 @@
 
 import PSEUGA.common.Constants as const
 import random
+from PSEUGA.common.Functs import Clamp, Lerp
 
 
 class Star:
@@ -23,4 +24,22 @@ class Star:
         self.mass = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
         self.flux = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
         self.distanceTo = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
+
+    def Mutate(self):
+        numTraitsToMutate = 1
+        mutationThreshold = 1 - (numTraitsToMutate / 4)
+        if random.random > mutationThreshold:
+            self.radius = self.MutateAttribute(self.radius, const.STARRADIUSMUTFACTOR, const.STARRADIUSMIN)
+        if random.random > mutationThreshold:
+            self.mass = self.MutateAttribute(self.radius, const.STARMASSMUTFACTOR, const.STARMASSMIN)
+        if random.random > mutationThreshold:
+            self.flux = self.MutateAttribute(self.flux, const.STARBASEFLUXMUTFACTOR, const.STARBASEFLUXMIN)
+        if random.random > mutationThreshold:
+            self.distanceTo = self.MutateAttribute(self.distanceTo, const.DISTANCEMUTFACTOR, const.DISTANCEMIN)
+
+    def MutateAttribute(self, attr, mutFactor, lowerBound=-float('inf'), upperBound=float('inf')):
+        attr += Lerp(random.random, -1 * mutFactor, mutFactor)
+        attr = Clamp(self.radius, min, max)
+        return attr
+
     

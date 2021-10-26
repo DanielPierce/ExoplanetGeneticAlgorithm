@@ -4,6 +4,7 @@ import math
 import orbital
 import random
 import PSEUGA.common.Constants as const
+from PSEUGA.common.Functs import Clamp, Lerp
 
 
 class Planet:
@@ -84,3 +85,28 @@ class Planet:
         self.loan = random.uniform(const.CONSTANTS[const.LOAN][const.MIN], const.CONSTANTS[const.LOAN][const.MAX])
         self.aop = random.uniform(const.CONSTANTS[const.AOP][const.MIN], const.CONSTANTS[const.AOP][const.MAX])
         self.ma = random.uniform(const.CONSTANTS[const.MA][const.MIN], const.CONSTANTS[const.MA][const.MAX])
+
+    def Mutate(self):
+        numTraitsToMutate = 1
+        mutationThreshold = 1 - (numTraitsToMutate / 7)
+
+        if random.random > mutationThreshold:
+            self.radius = self.MutateAttribute(self.radius, const.CONSTANTS[const.RADIUS][const.MUTFACTOR], const.CONSTANTS[const.RADIUS][const.MIN], const.CONSTANTS[const.RADIUS][const.MAX])
+        if random.random > mutationThreshold:
+            self.sma = self.MutateAttribute(self.sma, const.CONSTANTS[const.SMA][const.MUTFACTOR], const.CONSTANTS[const.SMA][const.MIN], const.CONSTANTS[const.SMA][const.MAX])
+        if random.random > mutationThreshold:
+            self.ecc = self.MutateAttribute(self.ecc, const.CONSTANTS[const.ECC][const.MUTFACTOR], const.CONSTANTS[const.ECC][const.MIN], const.CONSTANTS[const.ECC][const.MAX])
+        if random.random > mutationThreshold:
+            self.inc = self.MutateAttribute(self.inc, const.CONSTANTS[const.INC][const.MUTFACTOR], const.CONSTANTS[const.INC][const.MIN], const.CONSTANTS[const.INC][const.MAX])
+        if random.random > mutationThreshold:
+            self.loan = self.MutateAttribute(self.loan, const.CONSTANTS[const.LOAN][const.MUTFACTOR], const.CONSTANTS[const.LOAN][const.MIN], const.CONSTANTS[const.LOAN][const.MAX])
+        if random.random > mutationThreshold:
+            self.aop = self.MutateAttribute(self.aop, const.CONSTANTS[const.AOP][const.MUTFACTOR], const.CONSTANTS[const.AOP][const.MIN], const.CONSTANTS[const.AOP][const.MAX])
+        if random.random > mutationThreshold:
+            self.ma = self.MutateAttribute(self.ma, const.CONSTANTS[const.MA][const.MUTFACTOR], const.CONSTANTS[const.MA][const.MIN], const.CONSTANTS[const.MA][const.MAX])
+
+    def MutateAttribute(self, attr, mutFactor, lowerBound=-float('inf'), upperBound=float('inf')):
+            attr += Lerp(random.random, -1 * mutFactor, mutFactor)
+            attr = Clamp(self.radius, min, max)
+            return attr
+

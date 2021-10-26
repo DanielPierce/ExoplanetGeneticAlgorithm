@@ -18,6 +18,7 @@ import mpmath as mpm
 import copy
 
 from PSEUGA.src.IOHandlers import InputHandler
+from PSEUGA.common.Functs import Clamp
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
@@ -163,49 +164,20 @@ def evalOneMaxDist(individual):
     individual.lc = generatedCustomCurve
     return [sumOfDists]
 
-def lerp(a,b,c):
-    return (c * b) + ((1-c) * a)
-
-def randomizeAttr(currentValue, mutFactor):
-    return currentValue + lerp(-1 * mutFactor, mutFactor, random.random())
-
-def mutateAttr(individual, indexToMutate):
-    attrIndex = indexToMutate % const.ATTRPERPLANET
-    if(indexToMutate == const.NUMPLANETS):
-        #print("mutating num planets")
-        individual[indexToMutate] = random.randint(0, const.MAXPLANETS)
-    elif (indexToMutate == const.STARRADIUS):
-        #print("mutating star radius")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARRADIUSMUTFACTOR)
-        if(individual[indexToMutate] <= 10000):
-            individual[indexToMutate] = 10000
-    elif (indexToMutate == const.STARMASS):
-        #print("mutating star mass")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARMASSMUTFACTOR)
-        if(individual[indexToMutate] <= const.STARMASSMIN):
-            individual[indexToMutate] = const.STARMASSMIN
-    elif (indexToMutate == const.STARBASEFLUX):
-        #print("mutating base flux")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARBASEFLUXMUTFACTOR)
-        if(individual[indexToMutate] < 0):
-            individual[indexToMutate] = 0
-    else:
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], CONSTANTS[attrIndex][const.MUTFACTOR])
-        #print(f"mutating attribute {indexToMutate}")
-        if(individual[indexToMutate] > CONSTANTS[attrIndex][const.MAX]):
-            individual[indexToMutate] = CONSTANTS[attrIndex][const.MAX]
-        if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
-            individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
-        if(attrIndex == const.INC):
-            individual[indexToMutate] = 0
 
 
 def mutation(individual):
-    # have probability to mutate each attribute, with prob such that 2 are mutate per
-    mutationThreshold = 1 - (const.ATTRSPERMUTATION / len(individual))
-    for i in range(len(individual)):
+    mutationThreshold = 0.9
+
+    for index in range(const.MAXPLANETS + 2):
         if(random.random() > mutationThreshold):
-            mutateAttr(individual, i)
+            if index == 21:
+                individual.ps.numActivePlanets += random.randint(-1 * const.NUMPLANETSMUTFACTOR, const.NUMPLANETSMUTFACTOR)
+                individual.ps.numActivePlanets = Clamp(individual.ps.numActivePlanets, 0, const.MAXPLANETS)
+            elif index == 20:
+                individual.ps.star.Mutate()
+            else:
+                individual.ps.planets[index].Mutate()
 
 def randomizeIndividual(individual):
     index = random.randint(0,21)
