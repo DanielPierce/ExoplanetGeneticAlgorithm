@@ -169,7 +169,7 @@ def mutation(individual):
     mutationThreshold = 0.9
 
     for index in range(const.MAXPLANETS + 2):
-        if(random.random() > mutationThreshold):
+        if random.random() > mutationThreshold:
             if index == 21:
                 individual.ps.numActivePlanets += random.randint(-1 * const.NUMPLANETSMUTFACTOR, const.NUMPLANETSMUTFACTOR)
                 individual.ps.numActivePlanets = Clamp(individual.ps.numActivePlanets, 0, const.MAXPLANETS)
@@ -179,13 +179,13 @@ def mutation(individual):
                 individual.ps.planets[index].Mutate()
 
 def randomizeIndividual(individual):
-    index = random.randint(0,21)
-    if index == 21:
-        individual.ps.numActivePlanets = random.randint(0,20)
-    elif index == 20:
-        individual.ps.star.Randomize()
-    else:
-        individual.ps.planets[index].Randomize()
+    for index in range(0,21):
+        if index == 21:
+            individual.ps.numActivePlanets = random.randint(0,20)
+        elif index == 20:
+            individual.ps.star.Randomize()
+        else:
+            individual.ps.planets[index].Randomize()
     return individual
 
 def mate(individualA, individualB):

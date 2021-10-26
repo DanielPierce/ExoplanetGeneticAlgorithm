@@ -28,18 +28,18 @@ class Star:
     def Mutate(self):
         numTraitsToMutate = 1
         mutationThreshold = 1 - (numTraitsToMutate / 4)
-        if random.random > mutationThreshold:
+        if random.random() > mutationThreshold:
             self.radius = self.MutateAttribute(self.radius, const.STARRADIUSMUTFACTOR, const.STARRADIUSMIN)
-        if random.random > mutationThreshold:
+        if random.random() > mutationThreshold:
             self.mass = self.MutateAttribute(self.radius, const.STARMASSMUTFACTOR, const.STARMASSMIN)
-        if random.random > mutationThreshold:
+        if random.random() > mutationThreshold:
             self.flux = self.MutateAttribute(self.flux, const.STARBASEFLUXMUTFACTOR, const.STARBASEFLUXMIN)
-        if random.random > mutationThreshold:
+        if random.random() > mutationThreshold:
             self.distanceTo = self.MutateAttribute(self.distanceTo, const.DISTANCEMUTFACTOR, const.DISTANCEMIN)
 
     def MutateAttribute(self, attr, mutFactor, lowerBound=-float('inf'), upperBound=float('inf')):
-        attr += Lerp(random.random, -1 * mutFactor, mutFactor)
-        attr = Clamp(self.radius, min, max)
+        attr += Lerp(random.random(), -1 * mutFactor, mutFactor)
+        attr = Clamp(self.radius, lowerBound, upperBound)
         return attr
 
     
