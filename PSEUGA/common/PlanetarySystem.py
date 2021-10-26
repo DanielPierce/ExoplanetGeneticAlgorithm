@@ -5,20 +5,25 @@ from PSEUGA.common.Star import Star
 import mpmath as mpm
 
 class PlanetarySystem:
-    def __init__(self, individual):
+    def __init__(self, individual=None):
         self.planets = []
-        for i in range(const.MAXPLANETS):
-            self.planets.append(Planet(
-            individual[const.ATTRPERPLANET * i + const.RADIUS],
-            individual[const.ATTRPERPLANET * i + const.ECC],
-            individual[const.ATTRPERPLANET * i + const.SMA],
-            individual[const.ATTRPERPLANET * i + const.INC],
-            individual[const.ATTRPERPLANET * i + const.LOAN],
-            individual[const.ATTRPERPLANET * i + const.AOP],
-            individual[const.ATTRPERPLANET * i + const.MA]))
-        self.distanceTo = individual[const.DISTANCE]
-        self.numActivePlanets = individual[const.NUMPLANETS]
-        self.star = Star(individual[const.STARRADIUS], individual[const.STARMASS], individual[const.STARBASEFLUX], self.distanceTo)
+        if individual is not None:
+            for i in range(const.MAXPLANETS):
+                self.planets.append(Planet(
+                individual[const.ATTRPERPLANET * i + const.RADIUS],
+                individual[const.ATTRPERPLANET * i + const.ECC],
+                individual[const.ATTRPERPLANET * i + const.SMA],
+                individual[const.ATTRPERPLANET * i + const.INC],
+                individual[const.ATTRPERPLANET * i + const.LOAN],
+                individual[const.ATTRPERPLANET * i + const.AOP],
+                individual[const.ATTRPERPLANET * i + const.MA]))
+            self.distanceTo = individual[const.DISTANCE]
+            self.numActivePlanets = individual[const.NUMPLANETS]
+            self.star = Star(individual[const.STARRADIUS], individual[const.STARMASS], individual[const.STARBASEFLUX], self.distanceTo)
+        else:
+            self.distanceTo = 0
+            self.numActivePlanets = 0
+            self.star = Star(0,0,0,0)    
 
     def GetPlanet(self, index):
         return self.planets[index]

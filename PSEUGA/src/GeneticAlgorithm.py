@@ -15,15 +15,24 @@ import sys
 
 from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
+from PSEUGA.common.PlanetarySystem import PlanetarySystem
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMin)
+#creator.create("Individual", list, fitness=creator.FitnessMin)
+creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
+
 # Attribute generator 
 toolbox.register("attr_int", random.randint, 0, const.MAXPLANETS)
+
 # Structure initializers
-toolbox.register("individual", tools.initRepeat, creator.Individual, 
-    toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
+#toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
+#toolbox.register("individual", tools.initCycle, creator.Individual, (toolbox.genome, toolbox.attr_int,toolbox.attr_int,toolbox.attr_int,toolbox.attr_int, toolbox.attr_int,toolbox.attr_int), n=1)
+
+toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 1)
+
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
@@ -31,6 +40,7 @@ toolbox.register("evaluate", helpers.evalOneMaxDist)
 toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
+
 
 
 def runGA(processPool, numGenerations, pop):
