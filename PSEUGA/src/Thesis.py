@@ -18,6 +18,7 @@ import mpmath as mpm
 import copy
 
 from PSEUGA.src.IOHandlers import InputHandler
+from PSEUGA.common.Functs import Clamp
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
@@ -46,12 +47,10 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2):
         txt = "uniformSourceResultAlgorithm found problematic function return with:\nd:     {dval}\nrp:   {rpval}\netc"
         raise ValueError(txt.format(dval = d, rpval = rp))
 
-def uniformSourceLightcurveAlgorithm(individual):
-    baseFlux = individual[const.STARBASEFLUX]
+def uniformSourceLightcurveAlgorithm(thisSystem):
     #overallFlux = [baseFlux for i in range(len(targetCurve.time))]
     notInRangeSkips = 0
     inRange = 0
-    thisSystem = PlanetarySystem(individual)
     planetCurves = []
     input = InputHandler.getInstance()
     for planetIndex in range(thisSystem.numActivePlanets):
@@ -75,7 +74,7 @@ def uniformSourceLightcurveAlgorithm(individual):
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
-            if(currentStep.flux != baseFlux):
+            if(currentStep.flux != thisSystem.star.flux):
                 inRange = inRange + 1
                 for x in range(currentStepIndex - input.runSettings['timestepsToSkip'], currentStepIndex):
                     followUp.append(customCurve.timeSteps[x])
@@ -155,86 +154,55 @@ def getAngularSizeFromSizeAndDist(size, distance):
     return mpm.atan(trueRatio)
 
 def evalOneMaxDist(individual):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual)
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual.ps)
     targetCustom = CustomLightcurve(targetCurve)
     targetSorted = targetCustom.sortByFlux()
     generatedSorted = generatedCustomCurve.sortByFlux()
     sumOfDists = 0
     for i in range(len(generatedSorted.timeSteps)):
         sumOfDists += targetSorted.timeSteps[i].distanceToTimestep(generatedSorted.timeSteps[i])
-    return [sumOfDists]
-
-def lerp(a,b,c):
-    return (c * b) + ((1-c) * a)
-
-def randomizeAttr(currentValue, mutFactor):
-    return currentValue + lerp(-1 * mutFactor, mutFactor, random.random())
-
-def mutateAttr(individual, indexToMutate):
-    attrIndex = indexToMutate % const.ATTRPERPLANET
-    if(indexToMutate == const.NUMPLANETS):
-        #print("mutating num planets")
-        individual[indexToMutate] = random.randint(0, const.MAXPLANETS)
-    elif (indexToMutate == const.STARRADIUS):
-        #print("mutating star radius")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARRADIUSMUTFACTOR)
-        if(individual[indexToMutate] <= 10000):
-            individual[indexToMutate] = 10000
-    elif (indexToMutate == const.STARMASS):
-        #print("mutating star mass")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARMASSMUTFACTOR)
-        if(individual[indexToMutate] <= const.STARMASSMIN):
-            individual[indexToMutate] = const.STARMASSMIN
-    elif (indexToMutate == const.STARBASEFLUX):
-        #print("mutating base flux")
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], const.STARBASEFLUXMUTFACTOR)
-        if(individual[indexToMutate] < 0):
-            individual[indexToMutate] = 0
-    else:
-        individual[indexToMutate] = randomizeAttr(individual[indexToMutate], CONSTANTS[attrIndex][const.MUTFACTOR])
-        #print(f"mutating attribute {indexToMutate}")
-        if(individual[indexToMutate] > CONSTANTS[attrIndex][const.MAX]):
-            individual[indexToMutate] = CONSTANTS[attrIndex][const.MAX]
-        if(individual[indexToMutate] < CONSTANTS[attrIndex][const.MIN]):
-            individual[indexToMutate] = CONSTANTS[attrIndex][const.MIN]
-        if(attrIndex == const.INC):
-            individual[indexToMutate] = 0
+    individual.lc = generatedCustomCurve
+    return [sumOfDists], generatedCustomCurve
 
 
 def mutation(individual):
-    # have probability to mutate each attribute, with prob such that 2 are mutate per
-    mutationThreshold = 1 - (const.ATTRSPERMUTATION / len(individual))
-    for i in range(len(individual)):
-        if(random.random() > mutationThreshold):
-            mutateAttr(individual, i)
+    mutationThreshold = 0.9
+
+    for index in range(const.MAXPLANETS + 2):
+        if random.random() > mutationThreshold:
+            if index == 21:
+                individual.ps.numActivePlanets += random.randint(-1 * const.NUMPLANETSMUTFACTOR, const.NUMPLANETSMUTFACTOR)
+                individual.ps.numActivePlanets = Clamp(individual.ps.numActivePlanets, 0, const.MAXPLANETS)
+            elif index == 20:
+                individual.ps.star.Mutate()
+            else:
+                individual.ps.planets[index].Mutate()
 
 def randomizeIndividual(individual):
-    for index in range(len(individual)):
-        attrIndex = index % const.ATTRPERPLANET
-        if (index == const.NUMPLANETS):
-            individual[index] = random.randint(0, const.MAXPLANETS)
-        elif (index == const.STARRADIUS):
-            individual[index] = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
-        elif (index == const.STARMASS):
-            individual[index] = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
-        elif (index == const.STARBASEFLUX):
-            individual[index] = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
-        elif (index == const.DISTANCE):
-            individual[index] = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
-        elif (attrIndex == const.RADIUS):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.SMA):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.ECC):
-            individual[index] = random.uniform(0.1, 0.4)
-        elif (attrIndex == const.INC):
-            #individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-            individual[index] = 0
-        elif (attrIndex == const.LOAN):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.AOP):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.MA):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+    for index in range(0,21):
+        if index == 21:
+            individual.ps.numActivePlanets = random.randint(0,20)
+        elif index == 20:
+            individual.ps.star.Randomize()
+        else:
+            individual.ps.planets[index].Randomize()
     return individual
+
+def mate(individualA, individualB):
+    numLoops = 5
+    for loopIndex in range(numLoops):
+        index = random.randint(0,21)
+        if index == 21:
+            tempActivePlanets = individualA.ps.numActivePlanets
+            individualA.ps.numActivePlanets = individualB.ps.numActivePlanets
+            individualB.ps.numActivePlanets = tempActivePlanets
+        elif index == 20:
+            tempStar = individualA.ps.star
+            individualA.ps.star = individualB.ps.star
+            individualB.ps.star = tempStar
+        else:
+            tempPlanet = individualA.ps.planets[index]
+            individualA.ps.planets[index] = individualB.ps.planets[index]
+            individualB.ps.planets[index] = tempPlanet
+
 

@@ -150,7 +150,7 @@ class OutputHandler:
         self.saveBestIndividualAt(individual, self.paths['bestIndivOutputPath'])
 
     def saveBestIndividualAt(self, individual, path):
-        system = PlanetarySystem(individual)
+        system = individual.ps
         jsonSystem = jsonpickle.encode(system)
         
         dataFile = open(path, 'w')
@@ -182,8 +182,8 @@ class OutputHandler:
         self.saveLightcurveAt(individual, self.paths['fitsOutputPath'])
 
     def saveLightcurveAt(self, individual, path):
-        return
-        lc = helpers.uniformSourceLightcurveAlgorithm(individual)
+        #lc = helpers.uniformSourceLightcurveAlgorithm(individual)
+        lc = individual.lc
         #need to turn lc into a lightkurve object rather than custom lightcurve object, then remove .csv postfix
         #hdu = lc.to_fits(path, overwrite=True,TELESCOP='SIMULATION')
         time, flux = lc.toXY()
@@ -196,7 +196,8 @@ class OutputHandler:
         self.savePopulationAt(pop, self.paths['populationOutputPath'])
     
     def savePopulationAt(self, pop, path):
-        popArray = np.array(pop)
+        popList = [indiv.ps.ToList() for indiv in pop]
+        popArray = np.array(popList)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
         np.savetxt(path, popArray, delimiter=',')
 

@@ -75,7 +75,8 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     output.saveTimeHistory(runInfo['timeHistory'])
     timeHistTime = time.perf_counter()
     print(f"Save time for Time History:    {timeHistTime - popHistTime:2.4f}s")
-    bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual)
+    #bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual.ps)
+    bestCurve = bestIndividual.lc
     customTarget = CustomLightcurve(helpers.targetCurve)
     viz.createLightcurvePlot(bestCurve, output.paths['outputFolderPath']+'GeneratedPlot.png')
     viz.createLightcurvePlot(customTarget, output.paths['outputFolderPath']+'TargetPlot.png')

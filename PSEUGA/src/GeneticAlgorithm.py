@@ -15,22 +15,32 @@ import sys
 
 from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
+from PSEUGA.common.PlanetarySystem import PlanetarySystem
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMin)
+#creator.create("Individual", list, fitness=creator.FitnessMin)
+creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin)
 
 toolbox = base.Toolbox()
+
 # Attribute generator 
 toolbox.register("attr_int", random.randint, 0, const.MAXPLANETS)
+
 # Structure initializers
-toolbox.register("individual", tools.initRepeat, creator.Individual, 
-    toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
+#toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
+#toolbox.register("individual", tools.initCycle, creator.Individual, (toolbox.genome, toolbox.attr_int,toolbox.attr_int,toolbox.attr_int,toolbox.attr_int, toolbox.attr_int,toolbox.attr_int), n=1)
+
+toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 1)
+
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 toolbox.register("evaluate", helpers.evalOneMaxDist)
-toolbox.register("mate", tools.cxTwoPoint)
+toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
+
 
 
 def runGA(processPool, numGenerations, pop):
@@ -87,12 +97,17 @@ def initGA(processPool):
     # Evaluate the entire population
     tic = time.perf_counter()
     #fitnesses = list(processPool.map(toolbox.evaluate, pop))
-    fitnesses = list(processPool.map(toolbox.evaluate, pop))
+    fitnesses = []
+    curves = []
+    for fit, curve in processPool.map(toolbox.evaluate, pop):
+        fitnesses.append(fit)
+        curves.append(curve)
     toc = time.perf_counter()
     print(f"Evaluated individuals in {toc - tic:0.4f} seconds")
 
-    for ind, fit in zip(pop, fitnesses):
+    for ind, fit, curve in zip(pop, fitnesses, curves):
         ind.fitness.values = fit
+        ind.lc = curve
 
     # CXPB  is the probability with which two individuals are crossed
     # MUTPB is the probability for mutating an individual
@@ -111,16 +126,25 @@ def runGeneration(pop, processPool):
             toolbox.mate(child1, child2)
             del child1.fitness.values
             del child2.fitness.values
+            child1.lc = None
+            child2.lc = None
     for mutant in offspring:
         if random.random() < MUTPB:
             toolbox.mutate(mutant)
             del mutant.fitness.values
+            mutant.lc = None
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    fitnesses = processPool.map(toolbox.evaluate, invalid_ind)
+    fitnesses = []
+    curves = []
+    for fit, curve in processPool.map(toolbox.evaluate, invalid_ind):
+        fitnesses.append(fit)
+        curves.append(curve)
     #fitnesses = map(toolbox.evaluate, invalid_ind)
-    for ind, fit in zip(invalid_ind, fitnesses):
+    
+    for ind, fit, curve in zip(invalid_ind, fitnesses, curves):
         ind.fitness.values = fit
+        ind.lc = curve
     # shuffle positions of population bc of positional crossover
     pop[:] = offspring
     hof.update(pop)
@@ -131,8 +155,8 @@ def printGenerationData(popStats, timeStats, g):
     print(f"Max: {popStats['maxFitness']}")
     print(f"Avg: {popStats['avgFitness']}")
     print(f"Std: {popStats['stdFitness']}")
-    print(f"Generation {g} complete in {timeStats['currentTime']:0.4f} seconds, averaging {timeStats['avg']:0.1f} seconds per")
-    print(f"Estimate {timeStats['timeRemaining']} seconds remaining, done at {timeStats['estCompletionTime']}")
+    print(f"Generation {g} complete in {timeStats['currentTime']:0.2f} seconds, averaging {timeStats['avg']:0.2f} seconds per")
+    print(f"Estimate {timeStats['timeRemaining']:0.2f} seconds remaining, done at {timeStats['estCompletionTime']}")
 
 def calculateTimeStatistics(timings, numGenerations, g):
     avg = statistics.mean(timings)

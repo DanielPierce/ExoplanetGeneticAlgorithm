@@ -2,10 +2,13 @@
 
 import math
 import orbital
+import random
+import PSEUGA.common.Constants as const
+from PSEUGA.common.Functs import Clamp, Lerp
 
 
 class Planet:
-    def __init__(self, rad, ec, sm, inclination, lo, ao, meanAnomaly):
+    def __init__(self, rad=0, ec=0, sm=0, inclination=0, lo=0, ao=0, meanAnomaly=0):
         self.radius = rad
         self.ecc = ec
         self.ecc2 = ec * ec
@@ -18,6 +21,8 @@ class Planet:
 
 
     def CalculatePeriod(self,mu):
+        if self.period != 0:
+            return
         self.period = 2 * math.pi * math.sqrt(math.pow(self.sma * 1000, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
 
     def CalculateCartesianPosition(self, trueAnomaly):
@@ -68,4 +73,40 @@ class Planet:
         print(f"Mean Anomaly: {self.ma} rads")
         if(self.period != 0):
             print(f"Period: {self.period} km")
+
+    def Randomize(self):
+        #This feels like it could be cleaned up
+        self.radius = random.uniform(const.CONSTANTS[const.RADIUS][const.MIN], const.CONSTANTS[const.RADIUS][const.MAX])
+        self.sma = random.uniform(const.CONSTANTS[const.SMA][const.MIN], const.CONSTANTS[const.SMA][const.MAX])
+        #self.ecc = random.uniform(const.CONSTANTS[const.ECC][const.MIN], const.CONSTANTS[const.ECC][const.MAX])
+        self.ecc = random.uniform(0.1, 0.4)
+        #self.inc = random.uniform(const.CONSTANTS[const.INC][const.MIN], const.CONSTANTS[const.INC][const.MAX])
+        self.inc = 0
+        self.loan = random.uniform(const.CONSTANTS[const.LOAN][const.MIN], const.CONSTANTS[const.LOAN][const.MAX])
+        self.aop = random.uniform(const.CONSTANTS[const.AOP][const.MIN], const.CONSTANTS[const.AOP][const.MAX])
+        self.ma = random.uniform(const.CONSTANTS[const.MA][const.MIN], const.CONSTANTS[const.MA][const.MAX])
+
+    def Mutate(self):
+        numTraitsToMutate = 1
+        mutationThreshold = 1 - (numTraitsToMutate / 7)
+
+        if random.random() > mutationThreshold:
+            self.radius = self.MutateAttribute(self.radius, const.CONSTANTS[const.RADIUS][const.MUTFACTOR], const.CONSTANTS[const.RADIUS][const.MIN], const.CONSTANTS[const.RADIUS][const.MAX])
+        if random.random() > mutationThreshold:
+            self.sma = self.MutateAttribute(self.sma, const.CONSTANTS[const.SMA][const.MUTFACTOR], const.CONSTANTS[const.SMA][const.MIN], const.CONSTANTS[const.SMA][const.MAX])
+        if random.random() > mutationThreshold:
+            self.ecc = self.MutateAttribute(self.ecc, const.CONSTANTS[const.ECC][const.MUTFACTOR], const.CONSTANTS[const.ECC][const.MIN], const.CONSTANTS[const.ECC][const.MAX])
+        if random.random() > mutationThreshold:
+            self.inc = self.MutateAttribute(self.inc, const.CONSTANTS[const.INC][const.MUTFACTOR], const.CONSTANTS[const.INC][const.MIN], const.CONSTANTS[const.INC][const.MAX])
+        if random.random() > mutationThreshold:
+            self.loan = self.MutateAttribute(self.loan, const.CONSTANTS[const.LOAN][const.MUTFACTOR], const.CONSTANTS[const.LOAN][const.MIN], const.CONSTANTS[const.LOAN][const.MAX])
+        if random.random() > mutationThreshold:
+            self.aop = self.MutateAttribute(self.aop, const.CONSTANTS[const.AOP][const.MUTFACTOR], const.CONSTANTS[const.AOP][const.MIN], const.CONSTANTS[const.AOP][const.MAX])
+        if random.random() > mutationThreshold:
+            self.ma = self.MutateAttribute(self.ma, const.CONSTANTS[const.MA][const.MUTFACTOR], const.CONSTANTS[const.MA][const.MIN], const.CONSTANTS[const.MA][const.MAX])
+
+    def MutateAttribute(self, attr, mutFactor, lowerBound=-float('inf'), upperBound=float('inf')):
+            attr += Lerp(random.random(), -1 * mutFactor, mutFactor)
+            attr = Clamp(self.radius, lowerBound, upperBound)
+            return attr
 
