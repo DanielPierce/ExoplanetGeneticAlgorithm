@@ -162,7 +162,7 @@ def evalOneMaxDist(individual):
     for i in range(len(generatedSorted.timeSteps)):
         sumOfDists += targetSorted.timeSteps[i].distanceToTimestep(generatedSorted.timeSteps[i])
     individual.lc = generatedCustomCurve
-    return [sumOfDists]
+    return [sumOfDists], generatedCustomCurve
 
 
 def mutation(individual):

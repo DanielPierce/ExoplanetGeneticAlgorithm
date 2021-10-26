@@ -54,5 +54,20 @@ class PlanetarySystem:
             print("No active planets")
         print("--- Star ---")
         self.star.PrettyPrint()
-        
+
+    def ToList(self):
+        retList = []
+        for index in range(const.MAXPLANETS):
+            retList.append(self.planets[index].radius)
+            retList.append(self.planets[index].sma)
+            retList.append(self.planets[index].ecc)
+            retList.append(self.planets[index].inc)
+            retList.append(self.planets[index].loan)
+            retList.append(self.planets[index].aop)
+            retList.append(self.planets[index].ma)
+        retList.append(self.star.radius)
+        retList.append(self.star.mass)
+        retList.append(self.star.flux)
+        retList.append(self.star.distanceTo)
+        return retList
 
