@@ -14,6 +14,8 @@ import numpy as np
 
 import copy
 
+from multiprocessing import current_process
+
 class InputHandler:
     __instance = None
     outputPath = 'PSEUGA/output/'
@@ -106,9 +108,9 @@ class InputHandler:
     def addOutputPathsFromName(self, pathToOutput):
         outputFolder = pathToOutput + self.runName
         outputPrefix = outputFolder + '/' + self.runName
-        if os.path.isdir(outputFolder):
+        if os.path.isdir(outputFolder) and current_process().name == 'MainProcess':
             shutil.rmtree(outputFolder)
-        os.mkdir(pathToOutput + self.runName)
+            os.makedirs(pathToOutput + self.runName)
 
         fitsOutputPath = outputPrefix + "_OUT.fits"
         populationOutputPath = outputPrefix + "_POP.csv"
@@ -180,6 +182,7 @@ class OutputHandler:
         self.saveLightcurveAt(individual, self.paths['fitsOutputPath'])
 
     def saveLightcurveAt(self, individual, path):
+        return
         lc = helpers.uniformSourceLightcurveAlgorithm(individual)
         #need to turn lc into a lightkurve object rather than custom lightcurve object, then remove .csv postfix
         #hdu = lc.to_fits(path, overwrite=True,TELESCOP='SIMULATION')
