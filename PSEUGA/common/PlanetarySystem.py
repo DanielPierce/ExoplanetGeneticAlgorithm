@@ -1,4 +1,5 @@
 
+import random
 import PSEUGA.common.Constants as const
 from PSEUGA.common.Planet import Planet
 from PSEUGA.common.Star import Star
@@ -21,6 +22,8 @@ class PlanetarySystem:
             self.numActivePlanets = individual[const.NUMPLANETS]
             self.star = Star(individual[const.STARRADIUS], individual[const.STARMASS], individual[const.STARBASEFLUX], self.distanceTo)
         else:
+            for i in range(const.MAXPLANETS):
+                self.planets.append(Planet())
             self.distanceTo = 0
             self.numActivePlanets = 0
             self.star = Star(0,0,0,0)    

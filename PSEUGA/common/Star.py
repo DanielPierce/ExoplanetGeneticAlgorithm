@@ -1,4 +1,6 @@
 
+import PSEUGA.common.Constants as const
+import random
 
 
 class Star:
@@ -15,4 +17,10 @@ class Star:
         print(f"Mass: {self.mass} kg")
         print(f"Base Flux: {self.flux} e/s")
         print(f"Distance: {self.distanceTo} km")
+
+    def Randomize(self):
+        self.radius = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
+        self.mass = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
+        self.flux = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
+        self.distanceTo = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
     

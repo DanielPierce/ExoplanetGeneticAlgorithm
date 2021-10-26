@@ -209,32 +209,13 @@ def mutation(individual):
             mutateAttr(individual, i)
 
 def randomizeIndividual(individual):
-    for index in range(len(individual)):
-        attrIndex = index % const.ATTRPERPLANET
-        if (index == const.NUMPLANETS):
-            individual[index] = random.randint(0, const.MAXPLANETS)
-        elif (index == const.STARRADIUS):
-            individual[index] = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
-        elif (index == const.STARMASS):
-            individual[index] = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
-        elif (index == const.STARBASEFLUX):
-            individual[index] = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
-        elif (index == const.DISTANCE):
-            individual[index] = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
-        elif (attrIndex == const.RADIUS):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN], CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.SMA):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.ECC):
-            individual[index] = random.uniform(0.1, 0.4)
-        elif (attrIndex == const.INC):
-            #individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-            individual[index] = 0
-        elif (attrIndex == const.LOAN):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.AOP):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
-        elif (attrIndex == const.MA):
-            individual[index] = random.uniform(CONSTANTS[attrIndex][const.MIN],CONSTANTS[attrIndex][const.MAX])
+    index = random.randint(0,21)
+    print(f'Index attempted is {index}')
+    if index == 21:
+        individual.ps.numActivePlanets = random.randint(0,20)
+    elif index == 20:
+        individual.ps.star.Randomize()
+    else:
+        individual.ps.planets[index].Randomize()
     return individual
 
