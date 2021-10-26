@@ -46,12 +46,10 @@ def uniformSourceResultAlgorithm(d, rp, rstar, z, z2, p, p2):
         txt = "uniformSourceResultAlgorithm found problematic function return with:\nd:     {dval}\nrp:   {rpval}\netc"
         raise ValueError(txt.format(dval = d, rpval = rp))
 
-def uniformSourceLightcurveAlgorithm(individual):
-    baseFlux = individual[const.STARBASEFLUX]
+def uniformSourceLightcurveAlgorithm(thisSystem):
     #overallFlux = [baseFlux for i in range(len(targetCurve.time))]
     notInRangeSkips = 0
     inRange = 0
-    thisSystem = PlanetarySystem(individual)
     planetCurves = []
     input = InputHandler.getInstance()
     for planetIndex in range(thisSystem.numActivePlanets):
@@ -75,7 +73,7 @@ def uniformSourceLightcurveAlgorithm(individual):
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
-            if(currentStep.flux != baseFlux):
+            if(currentStep.flux != thisSystem.star.flux):
                 inRange = inRange + 1
                 for x in range(currentStepIndex - input.runSettings['timestepsToSkip'], currentStepIndex):
                     followUp.append(customCurve.timeSteps[x])
@@ -155,13 +153,14 @@ def getAngularSizeFromSizeAndDist(size, distance):
     return mpm.atan(trueRatio)
 
 def evalOneMaxDist(individual):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual)
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual.ps)
     targetCustom = CustomLightcurve(targetCurve)
     targetSorted = targetCustom.sortByFlux()
     generatedSorted = generatedCustomCurve.sortByFlux()
     sumOfDists = 0
     for i in range(len(generatedSorted.timeSteps)):
         sumOfDists += targetSorted.timeSteps[i].distanceToTimestep(generatedSorted.timeSteps[i])
+    individual.lc = generatedCustomCurve
     return [sumOfDists]
 
 def lerp(a,b,c):
@@ -210,7 +209,6 @@ def mutation(individual):
 
 def randomizeIndividual(individual):
     index = random.randint(0,21)
-    print(f'Index attempted is {index}')
     if index == 21:
         individual.ps.numActivePlanets = random.randint(0,20)
     elif index == 20:
