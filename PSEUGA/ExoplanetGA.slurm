@@ -5,10 +5,10 @@
 #SBATCH --partition=debug
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=4
 #SBATCH --export=ALL
 #SBATCH --account=TG-CCR180031
-#SBATCH -t 00:25:00
+#SBATCH -t 00:10:00
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 ## Setup run environment

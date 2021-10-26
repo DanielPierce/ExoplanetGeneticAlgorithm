@@ -39,10 +39,16 @@ def printResults(pop):
 
 def initializeChildProcesses(target):
     helpers.targetCurve = target
-    input = Input()
+    try:
+        input = Input()
+    except:
+        input = Input.getInstance()
     input.getSettingsFromConf()
     input.GetIOFromInput(sys.argv)
-    output = Output(input)
+    try:
+        output = Output(input)
+    except:
+        output = Output.getInstance()
 
 def saveResults(hof, runInfo, generationTimings, finalPopulation):
     input = Input.getInstance()
@@ -80,7 +86,10 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
 
 def main():
     startupTime = time.perf_counter()
-    input = Input()
+    try:
+        input = Input()
+    except:
+        input = Input.getInstance()
     input.getSettingsFromConf()
     ioFromInputTime = time.perf_counter()
     print(f'Conf settings read in {ioFromInputTime - startupTime:2.4f} seconds')
@@ -89,7 +98,10 @@ def main():
     input.GetIOFromInput(sys.argv)
     setupTargetTime = time.perf_counter()
     print(f'IO in {setupTargetTime - ioFromInputTime:2.4f} seconds')
-    output = Output(input)
+    try:
+        output = Output(input)
+    except:
+        output = Output.getInstance()
     outputSetupTime = time.perf_counter()
     print(f'Output setup in {outputSetupTime - setupTargetTime:2.4f} seconds')
 
