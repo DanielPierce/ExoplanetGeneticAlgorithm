@@ -165,7 +165,6 @@ def evalOneMaxDist(individual):
     return [sumOfDists]
 
 
-
 def mutation(individual):
     mutationThreshold = 0.9
 
@@ -188,4 +187,22 @@ def randomizeIndividual(individual):
     else:
         individual.ps.planets[index].Randomize()
     return individual
+
+def mate(individualA, individualB):
+    numLoops = 5
+    for loopIndex in range(numLoops):
+        index = random.randint(0,21)
+        if index == 21:
+            tempActivePlanets = individualA.ps.numActivePlanets
+            individualA.ps.numActivePlanets = individualB.ps.numActivePlanets
+            individualB.ps.numActivePlanets = tempActivePlanets
+        elif index == 20:
+            tempStar = individualA.ps.star
+            individualA.ps.star = individualB.ps.star
+            individualB.ps.star = tempStar
+        else:
+            tempPlanet = individualA.ps.planets[index]
+            individualA.ps.planets[index] = individualB.ps.planets[index]
+            individualB.ps.planets[index] = tempPlanet
+
 

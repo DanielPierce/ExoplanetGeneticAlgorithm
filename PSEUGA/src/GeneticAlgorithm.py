@@ -37,7 +37,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 toolbox.register("evaluate", helpers.evalOneMaxDist)
-toolbox.register("mate", tools.cxTwoPoint)
+toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
