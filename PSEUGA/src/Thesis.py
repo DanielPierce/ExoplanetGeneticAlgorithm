@@ -91,19 +91,7 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
     finalCurve = CustomLightcurve()
     finalCurve.epochTime = targetCustom.epochTime
     for i in range(len(targetCustom.timeSteps)):
-        if(thisSystem.numActivePlanets == 0):
-            continue
-        try:
-            if(i >= len(planetCurves[0].timeSteps)):
-                continue
-        except IndexError:
-            print("Hit index error, dumping current data")
-            print(f"Size of system's planets array: {len(thisSystem.planets)}")
-            print(f"Size of planetCurves array: {len(planetCurves)}")
-            thisSystem.PrettyPrint()
-            exit()
-        #print(f"{i} {len(planetCurves)} {len(planetCurves[0].timeSteps)}")
-        minFlux = planetCurves[0].timeSteps[i].flux
+        minFlux = thisSystem.star.flux
         for j in range(1, len(planetCurves)):
             if(planetCurves[j].timeSteps[i].flux < minFlux):
                 minFlux = planetCurves[j].timeSteps[i].flux
@@ -153,15 +141,18 @@ def getAngularSizeFromSizeAndDist(size, distance):
 
     return mpm.atan(trueRatio)
 
-def evalOneMaxDist(individual):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(individual.ps)
+def evalOneMaxDist(ps):
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
     targetCustom = CustomLightcurve(targetCurve)
     targetSorted = targetCustom.sortByFlux()
     generatedSorted = generatedCustomCurve.sortByFlux()
     sumOfDists = 0
     for i in range(len(generatedSorted.timeSteps)):
         sumOfDists += targetSorted.timeSteps[i].distanceToTimestep(generatedSorted.timeSteps[i])
-    individual.lc = generatedCustomCurve
+    #if(sumOfDists == 0):
+        #print(f'Sum of dists still zero! Len: {len(generatedSorted.timeSteps)}, {ps.numActivePlanets}')
+        #ps.PrettyPrint()
+    #individual.lc = generatedCustomCurve
     return [sumOfDists], generatedCustomCurve
 
 

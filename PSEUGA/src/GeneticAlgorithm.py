@@ -96,10 +96,10 @@ def initGA(processPool):
 
     # Evaluate the entire population
     tic = time.perf_counter()
-    #fitnesses = list(processPool.map(toolbox.evaluate, pop))
+    #fitnesses = list(processPool.map(toolbox.evaluate, (indiv.ps for indiv in pop)))
     fitnesses = []
     curves = []
-    for fit, curve in processPool.map(toolbox.evaluate, pop):
+    for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in pop)):
         fitnesses.append(fit)
         curves.append(curve)
     toc = time.perf_counter()
@@ -137,10 +137,10 @@ def runGeneration(pop, processPool):
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
     fitnesses = []
     curves = []
-    for fit, curve in processPool.map(toolbox.evaluate, invalid_ind):
+    for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind)):
         fitnesses.append(fit)
         curves.append(curve)
-    #fitnesses = map(toolbox.evaluate, invalid_ind)
+    #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
     
     for ind, fit, curve in zip(invalid_ind, fitnesses, curves):
         ind.fitness.values = fit
