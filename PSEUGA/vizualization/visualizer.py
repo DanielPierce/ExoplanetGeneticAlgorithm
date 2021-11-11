@@ -13,7 +13,7 @@ def createLightcurvePlot(lightcurve, path):
     
     plt.plot(x,y)
     plt.xlabel('Seconds from Epoch')
-    plt.ylabel('Flux')
+    plt.ylabel('PDCSAP Flux')
     plt.savefig(path, bbox_inches='tight')
     #print(f'saved to {path}')
 
