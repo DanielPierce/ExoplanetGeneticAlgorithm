@@ -18,20 +18,20 @@ class CustomLightcurve:
             if not type(self.epochTime) is datetime:
                 print(self.epochTime)
                 raise TypeError(f"Epoch time must be a datetime, currently is {type(self.epochTime)}")
-            self.sortByDate()
         elif(len(args) == 1):
             kurve = args[0]
             self.epochTime = dateparser.parse(kurve.time.iso[0])
             self.timeSteps = []
             for i in range(len(kurve.time.iso)):
                 secondsFromEpoch = dateparser.parse(kurve.time.iso[i]) - dateparser.parse(kurve.time.iso[0])
-                self.timeSteps.append(TimeStep.TimeStep(secondsFromEpoch.seconds, kurve.flux[i].value, kurve.flux_err[i].value))
+                self.timeSteps.append(TimeStep.TimeStep(secondsFromEpoch.days * 24 *60 * 60 + secondsFromEpoch.seconds, kurve.flux[i].value, kurve.flux_err[i].value))
             if not type(self.epochTime) is datetime:
                 print(self.epochTime)
                 raise TypeError(f"Epoch time must be a datetime, currently is {type(self.epochTime)}")
         elif(len(args) == 0):
             self.epochTime = None
             self.timeSteps = []
+        self.sortByDate()
 
     @staticmethod
     def createFromCopy(targetCLC):
