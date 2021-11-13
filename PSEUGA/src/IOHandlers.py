@@ -50,7 +50,7 @@ class InputHandler:
         limbDarkeningType = config['ANALYSIS']['limbdarkening']
         timestepsToSkip = int(config['ANALYSIS']['stepstoskip'])
         numChildProcesses = int(config['ANALYSIS']['processes'])
-        debug = bool(config['ANALYSIS']['debug'])
+        debug = config.getboolean('ANALYSIS', 'debug')
         outputGens = int(config['ANALYSIS']['outputgens'])
         self.runSettings.update({'populationSize':populationSize, 'numGenerations':numGenerations, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug, 'outputGens':outputGens})
         #printConfig(runSettings)
@@ -218,7 +218,9 @@ class OutputHandler:
     def saveGenerationData(self, genNum, pop, hof):
         #rewrite this to not just save to default
         input = InputHandler.getInstance()
-        filepath = 'PSEUGA/output/' + input.runName + '/historicaldata/gen' + str(genNum) + '/'
+        numDigits = len(str(input.runSettings['numGenerations']))
+        zerodGenNum = str(genNum).zfill(numDigits)
+        filepath = 'PSEUGA/output/' + input.runName + '/historicaldata/gen' + zerodGenNum + '/'
         os.makedirs(filepath)
         self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
         self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
