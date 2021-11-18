@@ -39,7 +39,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("evaluate", helpers.evalOneMaxDist)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
-toolbox.register("select", tools.selTournament, tournsize=3)
+toolbox.register("select", tools.selTournament, tournsize=2)
 
 
 
@@ -86,11 +86,14 @@ def initGA(processPool):
     global CXPB, MUTPB
 
     input = Input.getInstance()
+    output = Output.getInstance()
     hof = tools.HallOfFame(3)
     pop = toolbox.population(n=input.runSettings['populationSize'])
     tic = time.perf_counter()
+    output.saveGenerationData(-1, pop, hof)
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
     pop = tempPop
+    output.saveGenerationData(0, pop, hof)
     toc = time.perf_counter()
     print(f"Randomized individuals in {toc - tic:0.4f} seconds")
 
@@ -111,13 +114,15 @@ def initGA(processPool):
 
     # CXPB  is the probability with which two individuals are crossed
     # MUTPB is the probability for mutating an individual
-    CXPB, MUTPB = 0.9, 0.4
+    CXPB, MUTPB = 0.6, 0.4
     return pop
 
 def runGeneration(pop, processPool):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
-    offspring = toolbox.select(pop, len(pop))
+
+    #mu/lambeda alg, generate only 1/4 the number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
+    offspring = toolbox.select(pop, max(round(len(pop)/4),2))
     # Clone the selected individuals
     offspring = list(map(toolbox.clone, offspring))       
     # Apply crossover and mutation on the offspring
@@ -128,11 +133,13 @@ def runGeneration(pop, processPool):
             del child2.fitness.values
             child1.lc = None
             child2.lc = None
-    for mutant in offspring:
-        if random.random() < MUTPB:
-            toolbox.mutate(mutant)
-            del mutant.fitness.values
-            mutant.lc = None
+        else:
+            toolbox.mutate(child1)
+            toolbox.mutate(child2)
+            del child1.fitness.values
+            del child2.fitness.values
+            child1.lc = None
+            child2.lc = None
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
     fitnesses = []
@@ -145,8 +152,10 @@ def runGeneration(pop, processPool):
     for ind, fit, curve in zip(invalid_ind, fitnesses, curves):
         ind.fitness.values = fit
         ind.lc = curve
+
+    popSize = len(pop)
     # shuffle positions of population bc of positional crossover
-    pop[:] = offspring
+    pop[:] = toolbox.select(offspring + pop, popSize)
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
         

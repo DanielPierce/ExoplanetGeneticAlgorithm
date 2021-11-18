@@ -170,7 +170,7 @@ def mutation(individual):
                 individual.ps.planets[index].Mutate()
 
 def randomizeIndividual(individual):
-    for index in range(0,21):
+    for index in range(0,22):
         if index == 21:
             individual.ps.numActivePlanets = random.randint(0,20)
         elif index == 20:

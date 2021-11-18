@@ -69,5 +69,6 @@ class PlanetarySystem:
         retList.append(self.star.mass)
         retList.append(self.star.flux)
         retList.append(self.star.distanceTo)
+        retList.append(self.numActivePlanets)
         return retList
 
