@@ -39,7 +39,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("evaluate", helpers.evalOneMaxDist)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
-toolbox.register("select", tools.selTournament, tournsize=2)
+toolbox.register("select", tools.selBest)
 
 
 
@@ -121,8 +121,8 @@ def runGeneration(pop, processPool):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
 
-    #mu/lambeda alg, generate only 1/4 the number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
-    offspring = toolbox.select(pop, max(round(len(pop)/4),2))
+    #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
+    offspring = toolbox.select(pop, max(len(pop),2))
     # Clone the selected individuals
     offspring = list(map(toolbox.clone, offspring))       
     # Apply crossover and mutation on the offspring
