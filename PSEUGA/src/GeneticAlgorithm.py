@@ -18,6 +18,8 @@ from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
 
+import numpy as np
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
 creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin)
@@ -120,42 +122,60 @@ def initGA(processPool):
 def runGeneration(pop, processPool):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
+    setNumIslands = 4
+    islands = []#np.array_split(pop, 4)
+    for i in range(setNumIslands):
+        beginIndex = int(i/4 * len(pop))
+        endIndex = int((i+1)/4 * len(pop))
+        print(f"begin:{beginIndex},end:{endIndex}")
+        islands.append(pop[beginIndex:endIndex])
 
+    offspring = []
+    invalid_ind = []
+    for i in range(len(islands)):
     #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
-    offspring = toolbox.select(pop, max(len(pop),2))
-    # Clone the selected individuals
-    offspring = list(map(toolbox.clone, offspring))       
-    # Apply crossover and mutation on the offspring
-    for child1, child2 in zip(offspring[::2], offspring[1::2]):
-        if random.random() < CXPB:
-            toolbox.mate(child1, child2)
-            del child1.fitness.values
-            del child2.fitness.values
-            child1.lc = None
-            child2.lc = None
-        else:
-            toolbox.mutate(child1)
-            toolbox.mutate(child2)
-            del child1.fitness.values
-            del child2.fitness.values
-            child1.lc = None
-            child2.lc = None
-    # Evaluate the individuals with an invalid fitness
-    invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    fitnesses = []
-    curves = []
-    for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind)):
-        fitnesses.append(fit)
-        curves.append(curve)
-    #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
-    
-    for ind, fit, curve in zip(invalid_ind, fitnesses, curves):
-        ind.fitness.values = fit
-        ind.lc = curve
+        offspring.append(toolbox.select(islands[i], max(len(islands[i]),2)))
+        # Clone the selected individuals
+        offspring[i] = list(map(toolbox.clone, offspring[i]))       
+        # Apply crossover and mutation on the offspring
+        for child1, child2 in zip(offspring[i][::2], offspring[i][1::2]):
+            if random.random() < CXPB:
+                toolbox.mate(child1, child2)
+                del child1.fitness.values
+                del child2.fitness.values
+                child1.lc = None
+                child2.lc = None
+            else:
+                toolbox.mutate(child1)
+                toolbox.mutate(child2)
+                del child1.fitness.values
+                del child2.fitness.values
+                child1.lc = None
+                child2.lc = None
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind.append([ind for ind in offspring[i] if not ind.fitness.valid])
+    print(f"islands: {type(islands)},{type(islands[0])} offspring: {type(offspring)},{type(offspring[0])}")
+    for i in range(len(invalid_ind)):
+        fitnesses = []
+        curves = []
+        for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind[i])):
+            fitnesses.append(fit)
+            curves.append(curve)
+        #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
+        
+        for ind, fit, curve in zip(invalid_ind[i], fitnesses, curves):
+            ind.fitness.values = fit
+            ind.lc = curve
 
-    popSize = len(pop)
+    islandSize = len(islands[0])
+    numIslands = len(islands)
+    islandPops = []
+    for i in range(numIslands):
+        islandPop = []
+        islandPop[:] = toolbox.select(islands[i] + offspring[i], islandSize)
+        islandPops = islandPops + islandPop
     # shuffle positions of population bc of positional crossover
-    pop[:] = toolbox.select(offspring + pop, popSize)
+    pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
         
