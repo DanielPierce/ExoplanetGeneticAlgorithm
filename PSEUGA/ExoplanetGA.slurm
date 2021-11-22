@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name="quick test"
-#SBATCH --output="testdata.%j.%N.out"
-#SBATCH --error="testdata.%j.%N.err"
-#SBATCH --partition=debug
+#SBATCH --job-name="muislandslong"
+#SBATCH --output="muislandslong.%j.%N.out"
+#SBATCH --error="muislandslong.%j.%N.err"
+#SBATCH --partition=compute
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=128
 #SBATCH --export=ALL
 #SBATCH --account=TG-CCR180031
-#SBATCH -t 00:10:00
+#SBATCH -t 24:00:00
 #SBATCH --mail-type=BEGIN,END,FAIL
 
 ## Setup run environment
@@ -32,4 +32,4 @@ pip install --user openpyxl
 echo --+--PIP LIST--+--
 pip list
 
-python -m PSEUGA
+python -m PSEUGA kepler8b.fits kep8muislandstimed

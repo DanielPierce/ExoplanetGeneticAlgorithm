@@ -122,19 +122,21 @@ def initGA(processPool):
 def runGeneration(pop, processPool):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
+    islandsStart = time.perf_counter()
     setNumIslands = 4
     islands = []#np.array_split(pop, 4)
     for i in range(setNumIslands):
         beginIndex = int(i/4 * len(pop))
         endIndex = int((i+1)/4 * len(pop))
-        print(f"begin:{beginIndex},end:{endIndex}")
+        #print(f"begin:{beginIndex},end:{endIndex}")
         islands.append(pop[beginIndex:endIndex])
-
+    islandsEnd = time.perf_counter()
+    print(f"Islands: {islandsEnd-islandsStart:0.4f} seconds")
     offspring = []
     invalid_ind = []
     for i in range(len(islands)):
     #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
-        offspring.append(toolbox.select(islands[i], max(len(islands[i]),2)))
+        offspring.append(toolbox.select(islands[i], max(round(len(islands[i])/4),2)))
         # Clone the selected individuals
         offspring[i] = list(map(toolbox.clone, offspring[i]))       
         # Apply crossover and mutation on the offspring
@@ -154,19 +156,28 @@ def runGeneration(pop, processPool):
                 child2.lc = None
         # Evaluate the individuals with an invalid fitness
         invalid_ind.append([ind for ind in offspring[i] if not ind.fitness.valid])
-    print(f"islands: {type(islands)},{type(islands[0])} offspring: {type(offspring)},{type(offspring[0])}")
+    #print(f"islands: {type(islands)},{type(islands[0])} offspring: {type(offspring)},{type(offspring[0])}")
+    kidsEnd = time.perf_counter()
+    print(f"Kids: {kidsEnd-islandsEnd:0.4f} seconds")
+    numEvald = 0
+    allInvalid = []
     for i in range(len(invalid_ind)):
-        fitnesses = []
-        curves = []
-        for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind[i])):
-            fitnesses.append(fit)
-            curves.append(curve)
-        #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
-        
-        for ind, fit, curve in zip(invalid_ind[i], fitnesses, curves):
-            ind.fitness.values = fit
-            ind.lc = curve
+        numEvald = numEvald + len(invalid_ind[i])
+        allInvalid = allInvalid + invalid_ind[i]
+    fitnesses = []
+    curves = []
+    numEvald = numEvald + len(invalid_ind[i])
 
+    for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in allInvalid)):
+        fitnesses.append(fit)
+        curves.append(curve)
+    #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
+    
+    for ind, fit, curve in zip(allInvalid, fitnesses, curves):
+        ind.fitness.values = fit
+        ind.lc = curve
+    evalEnd = time.perf_counter()
+    print(f"Evald {numEvald} in {evalEnd-kidsEnd:0.4f} seconds w len {len(allInvalid)}")
     islandSize = len(islands[0])
     numIslands = len(islands)
     islandPops = []
@@ -178,6 +189,8 @@ def runGeneration(pop, processPool):
     pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
+    popEnd = time.perf_counter()
+    print(f"pop update: {popEnd-evalEnd:0.4f} seconds")
         
 def printGenerationData(popStats, timeStats, g):
     print(f"Min: {popStats['minFitness']}")
