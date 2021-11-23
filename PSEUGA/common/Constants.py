@@ -20,13 +20,13 @@ MUTFACTOR = 0
 MAX = 1
 MIN = 2
 
-CONSTANTS = [[10, 500000, 1000],
+CONSTANTS = [[1000, 500000, 1000],
              [0.001, 0.999, 0],
-             [1000, 70000000000, 100000],
+             [10000000, 70000000000, 100000],
              [0.1, 180, -180],
-             [0.001, 2 * math.pi, 0],
-             [0.001, 2 * math.pi, 0],
-             [0.001, 2 * math.pi, 0]]
+             [0.01, 2 * math.pi, 0],
+             [0.01, 2 * math.pi, 0],
+             [0.01, 2 * math.pi, 0]]
 
 NUMPLANETSMUTFACTOR = 1
 STARRADIUSMUTFACTOR = 1000

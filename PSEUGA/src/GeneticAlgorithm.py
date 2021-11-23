@@ -22,7 +22,7 @@ import numpy as np
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
-creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin)
+creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin, created=int)
 
 toolbox = base.Toolbox()
 
@@ -41,7 +41,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("evaluate", helpers.evalOneMaxMSE)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
-toolbox.register("select", tools.selBest)
+toolbox.register("select", tools.selTournament, tournsize=2)
 
 
 
@@ -61,7 +61,7 @@ def runGA(processPool, numGenerations, pop):
         print(f"--+-- GEN {g}/{numGenerations} --+--")
 
         tic = time.perf_counter()
-        runGeneration(pop, processPool)
+        pop = runGeneration(pop, processPool, g)
 
         if(input.runSettings['debugMode']):
             output.saveGenerationData(g, pop, hof)
@@ -114,16 +114,17 @@ def initGA(processPool):
     for ind, fit, curve in zip(pop, fitnesses, curves):
         ind.fitness.values = fit
         ind.lc = curve
+        ind.created = -1
 
     # CXPB  is the probability with which two individuals are crossed
     # MUTPB is the probability for mutating an individual
     CXPB, MUTPB = 0.6, 0.4
     return pop
 
-def runGeneration(pop, processPool):
+def runGeneration(pop, processPool, genNum):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
-    islandsStart = time.perf_counter()
+    #islandsStart = time.perf_counter()
     setNumIslands = 4
     islands = []#np.array_split(pop, 4)
     for i in range(setNumIslands):
@@ -131,8 +132,8 @@ def runGeneration(pop, processPool):
         endIndex = int((i+1)/4 * len(pop))
         #print(f"begin:{beginIndex},end:{endIndex}")
         islands.append(pop[beginIndex:endIndex])
-    islandsEnd = time.perf_counter()
-    print(f"Islands: {islandsEnd-islandsStart:0.4f} seconds")
+    #islandsEnd = time.perf_counter()
+    #print(f"Islands: {islandsEnd-islandsStart:0.4f} seconds")
     offspring = []
     invalid_ind = []
     for i in range(len(islands)):
@@ -148,6 +149,8 @@ def runGeneration(pop, processPool):
                 del child2.fitness.values
                 child1.lc = None
                 child2.lc = None
+                child1.created = genNum
+                child2.created = genNum
             else:
                 toolbox.mutate(child1)
                 toolbox.mutate(child2)
@@ -155,11 +158,13 @@ def runGeneration(pop, processPool):
                 del child2.fitness.values
                 child1.lc = None
                 child2.lc = None
+                child1.created = genNum
+                child2.created = genNum
         # Evaluate the individuals with an invalid fitness
         invalid_ind.append([ind for ind in offspring[i] if not ind.fitness.valid])
     #print(f"islands: {type(islands)},{type(islands[0])} offspring: {type(offspring)},{type(offspring[0])}")
     kidsEnd = time.perf_counter()
-    print(f"Kids: {kidsEnd-islandsEnd:0.4f} seconds")
+    #print(f"Kids: {kidsEnd-islandsEnd:0.4f} seconds")
     numEvald = 0
     allInvalid = []
     for i in range(len(invalid_ind)):
@@ -178,7 +183,7 @@ def runGeneration(pop, processPool):
         ind.fitness.values = fit
         ind.lc = curve
     evalEnd = time.perf_counter()
-    print(f"Evald {numEvald} in {evalEnd-kidsEnd:0.4f} seconds w len {len(allInvalid)}")
+    #print(f"Evald {numEvald} in {evalEnd-kidsEnd:0.4f} seconds w len {len(allInvalid)}")
     islandSize = len(islands[0])
     numIslands = len(islands)
     islandPops = []
@@ -190,8 +195,13 @@ def runGeneration(pop, processPool):
     pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
-    popEnd = time.perf_counter()
-    print(f"pop update: {popEnd-evalEnd:0.4f} seconds")
+    #popEnd = time.perf_counter()
+    #print(f"pop update: {popEnd-evalEnd:0.4f} seconds")
+    input = Input.getInstance()
+    if genNum % input.runSettings['islandSwapGens'] == 0:
+        for i in range(input.runSettings['islandNumSwaps']):
+            pop.append(pop.pop(0))
+    return pop
         
 def printGenerationData(popStats, timeStats, g):
     print(f"Min: {popStats['minFitness']}")

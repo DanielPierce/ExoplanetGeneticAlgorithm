@@ -47,12 +47,14 @@ class InputHandler:
         config.read(configLocation)
         populationSize = int(config['GA']['population'])
         numGenerations = int(config['GA']['generations'])
+        islandSwapGens = int(config['GA']['islandswap'])
+        islandNumSwaps = int(config['GA']['islandnumswaps'])
         limbDarkeningType = config['ANALYSIS']['limbdarkening']
         timestepsToSkip = int(config['ANALYSIS']['stepstoskip'])
         numChildProcesses = int(config['ANALYSIS']['processes'])
         debug = config.getboolean('ANALYSIS', 'debug')
         outputGens = int(config['ANALYSIS']['outputgens'])
-        self.runSettings.update({'populationSize':populationSize, 'numGenerations':numGenerations, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug, 'outputGens':outputGens})
+        self.runSettings.update({'populationSize':populationSize, 'numGenerations':numGenerations, 'islandSwapGens':islandSwapGens, 'islandNumSwaps':islandNumSwaps, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug, 'outputGens':outputGens})
         #printConfig(runSettings)
         return self.runSettings
 
@@ -150,8 +152,7 @@ class OutputHandler:
         self.saveBestIndividualAt(individual, self.paths['bestIndivOutputPath'])
 
     def saveBestIndividualAt(self, individual, path):
-        system = individual.ps
-        jsonSystem = jsonpickle.encode(system)
+        jsonSystem = jsonpickle.encode(individual)
         
         dataFile = open(path, 'w')
         dataFile.write(jsonSystem)
@@ -201,7 +202,9 @@ class OutputHandler:
         for i in range(len(popList)):
             try:
                 popList[i].append(pop[i].fitness.values[0])
+                popList[i].append(pop[i].created)
             except:
+                popList[i].append(-1)
                 popList[i].append(-1)
         popArray = np.array(popList)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
