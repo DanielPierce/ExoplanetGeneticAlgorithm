@@ -38,7 +38,7 @@ toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.att
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-toolbox.register("evaluate", helpers.evalOneMaxDist)
+toolbox.register("evaluate", helpers.evalOneMaxMSE)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selBest)
@@ -94,6 +94,7 @@ def initGA(processPool):
     tic = time.perf_counter()
     output.saveGenerationData(-1, pop, hof)
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
+    helpers.setToKep8b(tempPop[0])
     pop = tempPop
     output.saveGenerationData(0, pop, hof)
     toc = time.perf_counter()

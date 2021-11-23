@@ -2,6 +2,7 @@ from PSEUGA.common.TimeStep import TimeStep
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
 from PSEUGA.common.Planet import Planet
+from PSEUGA.common.Star import Star
 import PSEUGA.common.Constants as const
 from PSEUGA.common.Constants import ATTRSPERMUTATION, CONSTANTS
 
@@ -155,6 +156,17 @@ def evalOneMaxDist(ps):
     #individual.lc = generatedCustomCurve
     return [sumOfDists], generatedCustomCurve
 
+def evalOneMaxMSE(ps):
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    targetCustom = CustomLightcurve(targetCurve)
+    sumOfDiffs = 0
+    for i in range(len(generatedCustomCurve.timeSteps)):
+        currentDiff = generatedCustomCurve.timeSteps[i].flux - targetCustom.timeSteps[i].flux
+        if(abs(currentDiff) > targetCustom.timeSteps[i].error):
+            sumOfDiffs += (currentDiff * currentDiff)
+    return [abs(sumOfDiffs)], generatedCustomCurve
+    
+
 
 def mutation(individual):
     mutationThreshold = 0.9
@@ -195,5 +207,24 @@ def mate(individualA, individualB):
             tempPlanet = individualA.ps.planets[index]
             individualA.ps.planets[index] = individualB.ps.planets[index]
             individualB.ps.planets[index] = tempPlanet
+
+def setToKep8b(individual):
+    thisSystem:PlanetarySystem = individual.ps
+    thisSystem.numActivePlanets = 1
+    kep8b:Planet = thisSystem.planets[0]
+    kep8b.radius = 101447.148
+    kep8b.sma = 7225583.4
+    kep8b.ecc = 0
+    kep8b.inc = 0
+    kep8b.loan = 0
+    kep8b.aop = 0
+    kep8b.ma = 0
+    kep8:Star = thisSystem.star
+    kep8.distanceTo = 9460730000000 * 3430
+    kep8.radius = 1033524.888
+    kep8.mass = 1.213 * 1.989 * math.pow(10,30)
+    kep8.flux = 880
+    thisSystem.CalculatePlanetaryPeriod(0)
+    #print(f"Kepler-8b period: {kep8b.period} seconds")
 
 
