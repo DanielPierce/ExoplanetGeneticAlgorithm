@@ -136,6 +136,7 @@ def runGeneration(pop, processPool, genNum):
     #print(f"Islands: {islandsEnd-islandsStart:0.4f} seconds")
     offspring = []
     invalid_ind = []
+    #deep copy, are originals still there?
     for i in range(len(islands)):
     #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
         offspring.append(toolbox.select(islands[i], max(round(len(islands[i])/4),2)))

@@ -26,8 +26,8 @@ class Planet:
         self.period = 2 * math.pi * math.sqrt(math.pow(self.sma * 1000, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
 
     def CalculateCartesianPosition(self, trueAnomaly):
-        posX = self.radius * math.cos(trueAnomaly)
-        posY = self.radius * math.sin(trueAnomaly)
+        posX = self.sma * math.cos(trueAnomaly)
+        posY = self.sma * math.sin(trueAnomaly)
         posZ = 0
 
         coscos = math.cos(self.aop) * math.cos(self.loan)
