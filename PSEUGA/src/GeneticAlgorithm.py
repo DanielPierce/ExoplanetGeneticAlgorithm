@@ -20,6 +20,8 @@ from PSEUGA.common.PlanetarySystem import PlanetarySystem
 
 import numpy as np
 
+import copy
+
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
 creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin, created=int)
@@ -124,22 +126,20 @@ def initGA(processPool):
 def runGeneration(pop, processPool, genNum):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
-    #islandsStart = time.perf_counter()
     setNumIslands = 4
-    islands = []#np.array_split(pop, 4)
+    parentIslands = []
+    childIslands = []
     for i in range(setNumIslands):
         beginIndex = int(i/4 * len(pop))
         endIndex = int((i+1)/4 * len(pop))
-        #print(f"begin:{beginIndex},end:{endIndex}")
-        islands.append(pop[beginIndex:endIndex])
-    #islandsEnd = time.perf_counter()
-    #print(f"Islands: {islandsEnd-islandsStart:0.4f} seconds")
+        parentIslands.append(copy.deepcopy(pop[beginIndex:endIndex]))
+        childIslands.append(pop[beginIndex:endIndex])
     offspring = []
     invalid_ind = []
     #deep copy, are originals still there?
-    for i in range(len(islands)):
+    for i in range(len(parentIslands)):
     #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
-        offspring.append(toolbox.select(islands[i], max(round(len(islands[i])/4),2)))
+        offspring.append(toolbox.select(parentIslands[i], max(round(len(parentIslands[i])/4),2)))
         # Clone the selected individuals
         offspring[i] = list(map(toolbox.clone, offspring[i]))       
         # Apply crossover and mutation on the offspring
@@ -163,9 +163,6 @@ def runGeneration(pop, processPool, genNum):
                 child2.created = genNum
         # Evaluate the individuals with an invalid fitness
         invalid_ind.append([ind for ind in offspring[i] if not ind.fitness.valid])
-    #print(f"islands: {type(islands)},{type(islands[0])} offspring: {type(offspring)},{type(offspring[0])}")
-    kidsEnd = time.perf_counter()
-    #print(f"Kids: {kidsEnd-islandsEnd:0.4f} seconds")
     numEvald = 0
     allInvalid = []
     for i in range(len(invalid_ind)):
@@ -178,26 +175,23 @@ def runGeneration(pop, processPool, genNum):
     for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in allInvalid)):
         fitnesses.append(fit)
         curves.append(curve)
-    #fitnesses = map(toolbox.evaluate, (indiv.ps for indiv in invalid_ind))
     
     for ind, fit, curve in zip(allInvalid, fitnesses, curves):
         ind.fitness.values = fit
         ind.lc = curve
-    evalEnd = time.perf_counter()
-    #print(f"Evald {numEvald} in {evalEnd-kidsEnd:0.4f} seconds w len {len(allInvalid)}")
-    islandSize = len(islands[0])
-    numIslands = len(islands)
+
+    islandSize = len(parentIslands[0])
+    numIslands = len(parentIslands)
     islandPops = []
     for i in range(numIslands):
         islandPop = []
-        islandPop[:] = toolbox.select(islands[i] + offspring[i], islandSize)
+        islandPop[:] = toolbox.select(childIslands[i] + offspring[i], islandSize)
         islandPops = islandPops + islandPop
     # shuffle positions of population bc of positional crossover
     pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
-    #popEnd = time.perf_counter()
-    #print(f"pop update: {popEnd-evalEnd:0.4f} seconds")
+
     input = Input.getInstance()
     if genNum % input.runSettings['islandSwapGens'] == 0:
         for i in range(input.runSettings['islandNumSwaps']):
