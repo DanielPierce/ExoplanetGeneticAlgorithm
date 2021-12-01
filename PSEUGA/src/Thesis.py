@@ -161,6 +161,22 @@ def evalOneMaxMSE(ps):
             sumOfDiffs += (currentDiff * currentDiff)
     return [abs(sumOfDiffs)], generatedCustomCurve
     
+def evalTwoMinMSE(ps):
+    precurve = time.perf_counter()
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    postcurve1 = time.perf_counter()
+    targetCustom = CustomLightcurve(targetCurve)
+    postcurve2 = time.perf_counter()
+    sumOfDiffs = 0
+    for i in range(len(generatedCustomCurve.timeSteps)):
+        currentDiff = generatedCustomCurve.timeSteps[i].flux - targetCustom.timeSteps[i].flux
+        if(abs(currentDiff) > targetCustom.timeSteps[i].error):
+            sumOfDiffs += (currentDiff * currentDiff)
+    sumdiffs = time.perf_counter()
+    correlationMap = np.correlate(generatedCustomCurve.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
+    corrtime = time.perf_counter()
+    #print(f"Simulation: {postcurve1-precurve:4.2f}s, target: {postcurve2 - postcurve1:4.2f}s, sum: {sumdiffs-postcurve2:4.2f}s, corr:{corrtime-sumdiffs:4.2f}, type: {type(correlationMap)}, size: {correlationMap.shape} compared to {len(targetCustom.timeSteps)} w min:{min(correlationMap)},max:{max(correlationMap)}, compared to {sumOfDiffs}")
+    return [abs(sumOfDiffs), max(correlationMap)], generatedCustomCurve
 
 
 def mutation(individual):

@@ -26,6 +26,7 @@ class Planet:
         self.period = 2 * math.pi * math.sqrt(math.pow(self.sma * 1000, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
 
     def CalculateCartesianPosition(self, trueAnomaly):
+        #these three need to be fixed to take inclination and excentricity? into account
         posX = self.sma * math.cos(trueAnomaly)
         posY = self.sma * math.sin(trueAnomaly)
         posZ = 0

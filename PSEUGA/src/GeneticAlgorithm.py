@@ -22,7 +22,7 @@ import numpy as np
 
 import copy
 
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("FitnessMin", base.Fitness, weights=(-1.0, -1.0))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
 creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.FitnessMin, created=int)
 
@@ -40,7 +40,7 @@ toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.att
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-toolbox.register("evaluate", helpers.evalOneMaxMSE)
+toolbox.register("evaluate", helpers.evalTwoMinMSE)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=2)

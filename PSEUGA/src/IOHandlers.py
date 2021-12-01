@@ -16,6 +16,9 @@ import copy
 
 from multiprocessing import current_process
 
+import PSEUGA.vizualization.visualizer as viz
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
+
 class InputHandler:
     __instance = None
     outputPath = 'PSEUGA/output/'
@@ -233,7 +236,11 @@ class OutputHandler:
         os.makedirs(filepath)
         self.savePopulationAt(pop, filepath + 'population.csv')
         try:
+            customTarget = CustomLightcurve(helpers.targetCurve)
+            viz.createLightcurvePlot(hof[0].lc, filepath+'GeneratedPlot.png')
+            viz.createLightcurvePlot(customTarget, filepath+'TargetPlot.png')
+            viz.createComparisonPlot(customTarget, hof[0].lc, filepath+'CompPlot.png') 
             self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
             self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
-        except:
-            pass
+        except Exception as e:
+            print(e)

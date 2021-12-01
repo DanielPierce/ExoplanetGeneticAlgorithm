@@ -86,3 +86,9 @@ class CustomLightcurve:
             x.append(step.secondsFromEpoch)
             y.append(step.flux)
         return x,y
+    
+    def getFluxAsList(self):
+        fluxList = []
+        for step in self.timeSteps:
+            fluxList.append(step.flux)
+        return fluxList
