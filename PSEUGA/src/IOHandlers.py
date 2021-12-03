@@ -16,6 +16,9 @@ import copy
 
 from multiprocessing import current_process
 
+import PSEUGA.vizualization.visualizer as viz
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
+
 class InputHandler:
     __instance = None
     outputPath = 'PSEUGA/output/'
@@ -47,12 +50,14 @@ class InputHandler:
         config.read(configLocation)
         populationSize = int(config['GA']['population'])
         numGenerations = int(config['GA']['generations'])
+        islandSwapGens = int(config['GA']['islandswap'])
+        islandNumSwaps = int(config['GA']['islandnumswaps'])
         limbDarkeningType = config['ANALYSIS']['limbdarkening']
         timestepsToSkip = int(config['ANALYSIS']['stepstoskip'])
         numChildProcesses = int(config['ANALYSIS']['processes'])
         debug = config.getboolean('ANALYSIS', 'debug')
         outputGens = int(config['ANALYSIS']['outputgens'])
-        self.runSettings.update({'populationSize':populationSize, 'numGenerations':numGenerations, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug, 'outputGens':outputGens})
+        self.runSettings.update({'populationSize':populationSize, 'numGenerations':numGenerations, 'islandSwapGens':islandSwapGens, 'islandNumSwaps':islandNumSwaps, 'limbDarkeningType':limbDarkeningType, 'timestepsToSkip':timestepsToSkip, 'numChildProcesses':numChildProcesses, 'debugMode':debug, 'outputGens':outputGens})
         #printConfig(runSettings)
         return self.runSettings
 
@@ -150,8 +155,7 @@ class OutputHandler:
         self.saveBestIndividualAt(individual, self.paths['bestIndivOutputPath'])
 
     def saveBestIndividualAt(self, individual, path):
-        system = individual.ps
-        jsonSystem = jsonpickle.encode(system)
+        jsonSystem = jsonpickle.encode(individual)
         
         dataFile = open(path, 'w')
         dataFile.write(jsonSystem)
@@ -197,6 +201,21 @@ class OutputHandler:
     
     def savePopulationAt(self, pop, path):
         popList = [indiv.ps.ToList() for indiv in pop]
+        #print(f"poplist: {type(popList)}, in poplist: {type(popList[0])}, values: {type(pop[0].fitness)}, len of vals: {len(pop[0].fitness)}")
+        for i in range(len(popList)):
+            try:
+                #popList.append('fits')
+                numValues = len(pop[i].fitness.values)
+                #print(f"len fitness {numValues}, type: {type(pop[i].fitness.values)}")
+                for j in range(numValues):
+                    popList[i].append(pop[i].fitness.values[j])
+                #popList.append('creation')
+            except Exception as e:
+                print(f"save population error: {e}")
+            try:
+                popList[i].append(pop[i].created)
+            except Exception as e:
+                print(f"save population error 2: {e}")
         popArray = np.array(popList)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
         np.savetxt(path, popArray, delimiter=',')
@@ -222,6 +241,13 @@ class OutputHandler:
         zerodGenNum = str(genNum).zfill(numDigits)
         filepath = 'PSEUGA/output/' + input.runName + '/historicaldata/gen' + zerodGenNum + '/'
         os.makedirs(filepath)
-        self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
-        self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
         self.savePopulationAt(pop, filepath + 'population.csv')
+        try:
+            customTarget = CustomLightcurve(helpers.targetCurve)
+            viz.createLightcurvePlot(hof[0].lc, filepath+'GeneratedPlot.png')
+            viz.createLightcurvePlot(customTarget, filepath+'TargetPlot.png')
+            viz.createComparisonPlot(customTarget, hof[0].lc, filepath+'CompPlot.png') 
+            self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
+            self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
+        except Exception as e:
+            print(f"save generation error: {e}")

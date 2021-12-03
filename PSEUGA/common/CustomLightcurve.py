@@ -68,7 +68,7 @@ class CustomLightcurve:
 
     def getUnskippedTimesteps(self, timestepsToSkip):
         unskipped = []
-        for i in range(len(self.timeSteps), timestepsToSkip):
+        for i in range(0, len(self.timeSteps), timestepsToSkip):
             if i >= len(self.timeSteps):
                 continue
             unskipped.append(self.timeSteps[i])
@@ -86,3 +86,9 @@ class CustomLightcurve:
             x.append(step.secondsFromEpoch)
             y.append(step.flux)
         return x,y
+    
+    def getFluxAsList(self):
+        fluxList = []
+        for step in self.timeSteps:
+            fluxList.append(step.flux)
+        return fluxList
