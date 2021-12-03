@@ -204,11 +204,18 @@ class OutputHandler:
         #print(f"poplist: {type(popList)}, in poplist: {type(popList[0])}, values: {type(pop[0].fitness)}, len of vals: {len(pop[0].fitness)}")
         for i in range(len(popList)):
             try:
-                popList[i].append(pop[i].fitness.values[0])
+                #popList.append('fits')
+                numValues = len(pop[i].fitness.values)
+                #print(f"len fitness {numValues}, type: {type(pop[i].fitness.values)}")
+                for j in range(numValues):
+                    popList[i].append(pop[i].fitness.values[j])
+                #popList.append('creation')
+            except Exception as e:
+                print(f"save population error: {e}")
+            try:
                 popList[i].append(pop[i].created)
-            except:
-                popList[i].append(-1)
-                popList[i].append(-1)
+            except Exception as e:
+                print(f"save population error 2: {e}")
         popArray = np.array(popList)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
         np.savetxt(path, popArray, delimiter=',')
@@ -243,4 +250,4 @@ class OutputHandler:
             self.saveLightcurveAt(hof[0], filepath + 'bestCurve.csv')
             self.saveBestIndividualAt(hof[0], filepath + 'bestIndiv.json')
         except Exception as e:
-            print(e)
+            print(f"save generation error: {e}")
