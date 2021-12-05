@@ -178,6 +178,14 @@ def evalTwoMinMSE(ps):
     #print(f"Simulation: {postcurve1-precurve:4.2f}s, target: {postcurve2 - postcurve1:4.2f}s, sum: {sumdiffs-postcurve2:4.2f}s, corr:{corrtime-sumdiffs:4.2f}, type: {type(correlationMap)}, size: {correlationMap.shape} compared to {len(targetCustom.timeSteps)} w min:{min(correlationMap)},max:{max(correlationMap)}, compared to {sumOfDiffs}")
     return [abs(sumOfDiffs), max(correlationMap)], generatedCustomCurve
 
+def evalXCorrCenter(ps):
+    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    targetCustom = CustomLightcurve(targetCurve)
+    correlationMap = np.correlate(generatedCustomCurve.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
+    maxValue = max(correlationMap)
+    maxIndex = correlationMap.index(maxValue)
+    return [maxValue, abs(len(correlationMap)/2 - maxIndex)], generatedCustomCurve
+
 
 def mutation(individual):
     mutationThreshold = 0.9
