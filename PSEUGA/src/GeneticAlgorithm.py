@@ -24,8 +24,9 @@ import copy
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0))
 creator.create("MSEwXCORR", base.Fitness, weights=(-1.0, 1.0))
+creator.create("XCORRcenter", base.Fitness, weights=(1.0,-10.0))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
-creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.MSEwXCORR, created=int)
+creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.XCORRcenter, created=int)
 
 toolbox = base.Toolbox()
 
@@ -41,7 +42,7 @@ toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.att
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-toolbox.register("evaluate", helpers.evalTwoMinMSE)
+toolbox.register("evaluate", helpers.evalXCorrCenter)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selTournament, tournsize=2)
@@ -184,19 +185,22 @@ def runGeneration(pop, processPool, genNum):
     islandSize = len(parentIslands[0])
     numIslands = len(parentIslands)
     islandPops = []
+    input = Input.getInstance()
     for i in range(numIslands):
         islandPop = []
-        islandPop[:] = toolbox.select(childIslands[i] + offspring[i], islandSize)
+        popToSelectFrom = childIslands[i] + offspring[i]
+        if genNum % input.runSettings['islandSwapGens'] == 0:
+            print("swapping!")
+            for k in range(numIslands):
+                if(i != k):
+                    numToSwap = input.runSettings['islandNumSwaps']
+                    popToSelectFrom = popToSelectFrom + toolbox.select(childIslands[k] + offspring[k], numToSwap)
+        islandPop[:] = toolbox.select(popToSelectFrom, islandSize)
         islandPops = islandPops + islandPop
     # shuffle positions of population bc of positional crossover
     pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
-
-    input = Input.getInstance()
-    if genNum % input.runSettings['islandSwapGens'] == 0:
-        for i in range(input.runSettings['islandNumSwaps']):
-            pop.append(pop.pop(0))
     return pop
         
 def printGenerationData(popStats, timeStats, g):
