@@ -204,15 +204,15 @@ class OutputHandler:
         #print(f"poplist: {type(popList)}, in poplist: {type(popList[0])}, values: {type(pop[0].fitness)}, len of vals: {len(pop[0].fitness)}")
         for i in range(len(popList)):
             try:
-                #popList.append('fits')
+                popList[i].append(0)
                 numValues = len(pop[i].fitness.values)
                 #print(f"len fitness {numValues}, type: {type(pop[i].fitness.values)}")
                 for j in range(numValues):
                     popList[i].append(pop[i].fitness.values[j])
-                #popList.append('creation')
             except Exception as e:
                 print(f"save population error: {e}")
             try:
+                popList[i].append(0)
                 popList[i].append(pop[i].created)
             except Exception as e:
                 print(f"save population error 2: {e}")

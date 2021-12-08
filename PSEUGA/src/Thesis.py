@@ -18,8 +18,9 @@ import time
 import mpmath as mpm
 import copy
 
-from PSEUGA.src.IOHandlers import InputHandler
+from PSEUGA.src.IOHandlers import InputHandler, OutputHandler
 from PSEUGA.common.Functs import Clamp
+import PSEUGA.vizualization.visualizer as viz
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
@@ -180,11 +181,25 @@ def evalTwoMinMSE(ps):
 
 def evalXCorrCenter(ps):
     generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    extendedGenerated = generatedCustomCurve.createExtension(ps.star.flux)
     targetCustom = CustomLightcurve(targetCurve)
-    correlationMap = np.correlate(generatedCustomCurve.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
-    maxValue = max(correlationMap)
-    maxIndex = correlationMap.index(maxValue)
-    return [maxValue, abs(len(correlationMap)/2 - maxIndex)], generatedCustomCurve
+    correlationMap = np.correlate(extendedGenerated.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
+    numTimesteps = len(generatedCustomCurve.timeSteps)
+
+    correlationMap = correlationMap[numTimesteps:-(numTimesteps-1)]
+
+    maxValue = 0
+    maxIndex = 0
+    for i in range(len(correlationMap)):
+        if(correlationMap[i] > maxValue):
+            maxValue = correlationMap[i]
+            maxIndex = i
+    halfLen = len(correlationMap)/2
+    diff = halfLen - maxIndex
+    output = OutputHandler.getInstance()
+    viz.createXCorrPlot(correlationMap, output.paths['outputFolderPath']+'xcorr.png')
+    viz.createLightcurvePlot(extendedGenerated, output.paths['outputFolderPath']+'extendedGenerated.png')
+    return [maxValue, abs(diff)], generatedCustomCurve
 
 
 def mutation(individual):

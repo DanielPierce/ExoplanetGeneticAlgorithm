@@ -190,7 +190,7 @@ def runGeneration(pop, processPool, genNum):
         islandPop = []
         popToSelectFrom = childIslands[i] + offspring[i]
         if genNum % input.runSettings['islandSwapGens'] == 0:
-            print("swapping!")
+            #print("swapping!")
             for k in range(numIslands):
                 if(i != k):
                     numToSwap = input.runSettings['islandNumSwaps']
