@@ -22,6 +22,8 @@ from PSEUGA.src.IOHandlers import InputHandler, OutputHandler
 from PSEUGA.common.Functs import Clamp
 import PSEUGA.vizualization.visualizer as viz
 
+import sys
+
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
 
@@ -54,26 +56,28 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
     notInRangeSkips = 0
     inRange = 0
     planetCurves = []
+    planetMinDists = []
     input = InputHandler.getInstance()
     for planetIndex in range(thisSystem.numActivePlanets):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
+        
         customCurve = CustomLightcurve(targetCurve)
         customCurve.setBaseFlux(thisSystem.star.flux)
-        #rstar = thisSystem.CalculateStarAngularSize()
                                                                                                               
         thisSystem.CalculatePlanetaryPeriod(planetIndex)
         
-        #zeroTime = customCurve.epochTime
-        #myFlux = [thisSystem.star.flux for i in range(len(targetCurve.time))]
-        #baseStepIndices = list(range(0, len(targetCurve.time), const.skippedTimesteps))
+        
         followUp = []
+        distances = []
+        
         baseCustomSteps = customCurve.getUnskippedTimesteps(input.runSettings['timestepsToSkip'])
         
         for currentStepIndex in range(len(baseCustomSteps)):
             currentStep = baseCustomSteps[currentStepIndex]
             #myFlux[i] = calculateTimestepFromTime(i, zeroTime, thisPlanet, thisSystem.star)
-            currentStep.flux = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+            currentStep.flux, dist = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+            distances.append(dist)
             # if not baseflux, add all timeslots between this and previous to followup
             # also add timeslots between this and next
             # once done with this for, remove duplicates from follup and then calculate all those
@@ -90,8 +94,10 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
                 notInRangeSkips = notInRangeSkips + 1
         followUpUnique = list(dict.fromkeys(followUp))
         for currentStep in followUpUnique:
-            currentStep.flux = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+            currentStep.flux, dist = calculateTimestep(currentStep, thisPlanet, thisSystem.star)
+            distances.append(dist)
         planetCurves.append(customCurve)
+        planetMinDists.append(min(distances))
     
     targetCustom = CustomLightcurve(targetCurve)
     finalCurve = CustomLightcurve()
@@ -103,7 +109,11 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
             minFlux = min(minFlux, planetCurveFlux)
         newStep = TimeStep(targetCustom.timeSteps[i].secondsFromEpoch, minFlux)
         finalCurve.timeSteps.append(newStep)
-    return finalCurve
+    #print(f"Planets: {len(planetMinDists)}, set: {planetMinDists}")
+    minDist = sys.maxsize
+    if(len(planetMinDists) != 0):
+        minDist = min(planetMinDists)
+    return finalCurve, minDist
 
 
 def calculateTimestep(timestep, thisPlanet, thisStar):
@@ -112,8 +122,6 @@ def calculateTimestep(timestep, thisPlanet, thisStar):
 
     cartesianPosition = thisPlanet.CalculateCartesianPosition(trueAnomaly)
     
-    if(cartesianPosition[1] < 0):
-        return thisStar.flux
 
     rstar = getAngularSizeFromSizeAndDist(thisStar.radius, thisStar.distanceTo)
     rp = getAngularSizeFromSizeAndDist(thisPlanet.radius, thisStar.distanceTo - cartesianPosition[1])
@@ -126,6 +134,9 @@ def calculateTimestep(timestep, thisPlanet, thisStar):
 
     # center to center distance between star and planet
     cartesianDist = math.dist([0,0,0], collapsedPosition)
+    
+    if(cartesianPosition[1] < 0):
+        return thisStar.flux, cartesianDist
 
     d = getAngularSizeFromSizeAndDist(cartesianDist, thisStar.distanceTo - cartesianPosition[1])
         
@@ -133,7 +144,7 @@ def calculateTimestep(timestep, thisPlanet, thisStar):
     z2 = math.pow(z,2)
     coverage = uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2)
     transitFlux = thisStar.flux * (1 - coverage)
-    return transitFlux
+    return transitFlux, cartesianDist
 
 def getAngularSizeFromSizeAndDist(size, distance):
     trueSize = mpm.mpf(size)
@@ -143,7 +154,7 @@ def getAngularSizeFromSizeAndDist(size, distance):
     return mpm.atan(trueRatio)
 
 def evalOneMaxDist(ps):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    generatedCustomCurve, min = uniformSourceLightcurveAlgorithm(ps)
     targetCustom = CustomLightcurve(targetCurve)
     targetSorted = targetCustom.sortByFlux()
     generatedSorted = generatedCustomCurve.sortByFlux()
@@ -153,7 +164,7 @@ def evalOneMaxDist(ps):
     return [sumOfDists], generatedCustomCurve
 
 def evalOneMaxMSE(ps):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    generatedCustomCurve, min = uniformSourceLightcurveAlgorithm(ps)
     targetCustom = CustomLightcurve(targetCurve)
     sumOfDiffs = 0
     for i in range(len(generatedCustomCurve.timeSteps)):
@@ -164,7 +175,7 @@ def evalOneMaxMSE(ps):
     
 def evalTwoMinMSE(ps):
     precurve = time.perf_counter()
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    generatedCustomCurve, min = uniformSourceLightcurveAlgorithm(ps)
     postcurve1 = time.perf_counter()
     targetCustom = CustomLightcurve(targetCurve)
     postcurve2 = time.perf_counter()
@@ -180,7 +191,7 @@ def evalTwoMinMSE(ps):
     return [abs(sumOfDiffs), max(correlationMap)], generatedCustomCurve
 
 def evalXCorrCenter(ps):
-    generatedCustomCurve = uniformSourceLightcurveAlgorithm(ps)
+    generatedCustomCurve, min = uniformSourceLightcurveAlgorithm(ps)
     extendedGenerated = generatedCustomCurve.createExtension(ps.star.flux)
     targetCustom = CustomLightcurve(targetCurve)
     correlationMap = np.correlate(extendedGenerated.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
@@ -199,7 +210,7 @@ def evalXCorrCenter(ps):
     output = OutputHandler.getInstance()
     viz.createXCorrPlot(correlationMap, output.paths['outputFolderPath']+'xcorr.png')
     viz.createLightcurvePlot(extendedGenerated, output.paths['outputFolderPath']+'extendedGenerated.png')
-    return [maxValue, abs(diff)], generatedCustomCurve
+    return [maxValue, abs(diff), min], generatedCustomCurve
 
 
 def mutation(individual):
@@ -244,7 +255,7 @@ def mate(individualA, individualB):
 
 def setToKep8b(individual):
     thisSystem:PlanetarySystem = individual.ps
-    thisSystem.numActivePlanets = 1
+    thisSystem.numActivePlanets = 0
     kep8b:Planet = thisSystem.planets[0]
     kep8b.radius = 101447.148
     kep8b.sma = 7225583.4

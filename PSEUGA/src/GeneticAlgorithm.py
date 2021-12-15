@@ -24,7 +24,7 @@ import copy
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0))
 creator.create("MSEwXCORR", base.Fitness, weights=(-1.0, 1.0))
-creator.create("XCORRcenter", base.Fitness, weights=(1.0,-10.0))
+creator.create("XCORRcenter", base.Fitness, weights=(10.0,-100.0, -1.0))
 #creator.create("Individual", list, fitness=creator.FitnessMin)
 creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.XCORRcenter, created=int)
 
