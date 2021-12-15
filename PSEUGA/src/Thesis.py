@@ -255,7 +255,7 @@ def mate(individualA, individualB):
 
 def setToKep8b(individual):
     thisSystem:PlanetarySystem = individual.ps
-    thisSystem.numActivePlanets = 0
+    thisSystem.numActivePlanets = 1
     kep8b:Planet = thisSystem.planets[0]
     kep8b.radius = 101447.148
     kep8b.sma = 7225583.4
