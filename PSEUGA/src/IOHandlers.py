@@ -50,7 +50,7 @@ class InputHandler:
         config.read(configLocation)
         populationSize = int(config['GA']['population'])
         numGenerations = int(config['GA']['generations'])
-        islandSwapGens = int(config['GA']['islandswap'])
+        islandSwapGens = int(config['GA']['islandswapgens'])
         islandNumSwaps = int(config['GA']['islandnumswaps'])
         limbDarkeningType = config['ANALYSIS']['limbdarkening']
         timestepsToSkip = int(config['ANALYSIS']['stepstoskip'])

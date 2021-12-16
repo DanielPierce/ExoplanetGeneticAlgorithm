@@ -20,25 +20,28 @@ MUTFACTOR = 0
 MAX = 1
 MIN = 2
 
-CONSTANTS = [[1000, 500000, 1000],
-             [0.001, 0.999, 0],
-             [10000000, 70000000000, 100000],
-             [0.1, 180, -180],
-             [0.01, 2 * math.pi, 0],
-             [0.01, 2 * math.pi, 0],
-             [0.01, 2 * math.pi, 0]]
+CONSTANTS = [[12500, 500000, 1000],
+             [0.25, 0.999, 0],
+             [2*math.pow(10,10), 7*math.pow(10,10), 100000],
+             [90, 180, -180],
+             [0.5 * math.pi, 2 * math.pi, 0],
+             [0.5 * math.pi, 2 * math.pi, 0],
+             [0.5 * math.pi, 2 * math.pi, 0]]
 
-NUMPLANETSMUTFACTOR = 1
-STARRADIUSMUTFACTOR = 1000
-STARMASSMUTFACTOR = math.pow(10,25)
-STARBASEFLUXMUTFACTOR = 1000
-DISTANCEMUTFACTOR = 9460730000000 # 1 lightyear
+NUMPLANETSMUTFACTOR = 2
 
 GRAVITATIONALCONSTANT = 6.674 * math.pow(10, -11) # m^3 kg^-1 s^-2
 
+STARMASSMUTFACTOR = math.pow(10,27)
 STARMASSMIN = 1.898 * math.pow(10,27) * 50 # hypothetical minimum mass of star is 75x the mass of jupiter, went with 50x to include brown dwarfs
-STARRADIUSMIN = STARRADIUSMUTFACTOR * 1000
+
+STARRADIUSMUTFACTOR = math.pow(10,6)
+STARRADIUSMIN = math.pow(10,6)
+
+STARBASEFLUXMUTFACTOR = 1000
 STARBASEFLUXMIN = 1
+
+DISTANCEMUTFACTOR = 9460730000000 * 3 # 3 lightyear
 DISTANCEMIN = 9460730000000 * 5 # 5 lightyears
 
 ATTRSPERMUTATION = 3
