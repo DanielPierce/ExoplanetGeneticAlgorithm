@@ -35,3 +35,17 @@ def createComparisonPlot(targetCurve, generatedCurve, path):
     plt.ylabel('Flux')
     plt.savefig(path, bbox_inches='tight')
     #print(f'saved to {path}')
+
+def createXCorrPlot(correlationMap, path):
+    x = [i for i in range(len(correlationMap))]
+    y = correlationMap
+
+    f = plt.figure()
+    f.set_figwidth(25)
+    f.set_figheight(5)
+    
+    plt.plot(x,y)
+    plt.xlabel('index')
+    plt.ylabel('match')
+    plt.savefig(path, bbox_inches='tight')
+    #print(f'saved to {path}')

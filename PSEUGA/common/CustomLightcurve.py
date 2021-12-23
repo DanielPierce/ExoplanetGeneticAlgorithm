@@ -43,6 +43,12 @@ class CustomLightcurve:
             ts.error = 0
         return newCurve
 
+    def createExtension(self, baseFlux):
+        newCurve = copy.deepcopy(self)
+        prefix, postfix = TimeStep.TimeStep.createExtensions(baseFlux, newCurve.timeSteps[-1].secondsFromEpoch)        
+        newCurve.timeSteps = prefix + newCurve.timeSteps + postfix
+        return newCurve
+
     def printTimesteps(self):
         print(f"Epoch time: {self.epochTime}")
         for i in range(len(self.timeSteps)):

@@ -26,3 +26,13 @@ class TimeStep:
         if(abs(fluxDistance) <= totalError):
             fluxDistance = 0
         return math.sqrt(timeDistance * timeDistance + fluxDistance * fluxDistance)
+
+    @staticmethod
+    def createExtensions(baseFlux, finalTime):
+        prefix = []
+        for i in range(-1000,0):
+            prefix.append(TimeStep(i * 120, baseFlux))
+        postfix = []
+        for i in range(1000):
+            postfix.append(TimeStep((i + 1) * 120 + finalTime, baseFlux))
+        return prefix, postfix
