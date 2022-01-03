@@ -2,6 +2,9 @@
 
 import datetime
 import time
+
+from deap.base import Toolbox
+from deap import base
 import PSEUGA.src.Thesis as helpers
 import PSEUGA.common.Constants as const
 import PSEUGA.src.GeneticAlgorithm as ga
@@ -83,6 +86,11 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     viz.createComparisonPlot(customTarget, bestCurve, output.paths['outputFolderPath']+'CompPlot.png')
     plotTime = time.perf_counter()
     print(f"Save time for plotting:        {plotTime - timeHistTime:2.4f}s")
+    print(f"HOF len: {len(hof)}")
+    bestFitVals = []
+    for i in range(len(hof)):
+        bestFitVals.append(hof[i].fitness.values)
+    print(f"Best fitness values: {bestFitVals}")
 
 
 def main():

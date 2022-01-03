@@ -1,4 +1,5 @@
 
+from math import ceil
 from deap.tools.support import Statistics
 from deap import base
 from deap import creator
@@ -25,27 +26,20 @@ import copy
 creator.create("FitnessMin", base.Fitness, weights=(-1.0))
 creator.create("MSEwXCORR", base.Fitness, weights=(-1.0, 1.0))
 creator.create("XCORRcenter", base.Fitness, weights=(10.0,-100.0, -1.0))
-#creator.create("Individual", list, fitness=creator.FitnessMin)
-creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.XCORRcenter, created=int)
+creator.create("NormalizedXCORRcenter", base.Fitness, weights=(1.0, -1.0, -1.0))
+creator.create("Individual", object, ps=PlanetarySystem, lc=CustomLightcurve, fitness=creator.NormalizedXCORRcenter, created=int)
 
 toolbox = base.Toolbox()
 
-# Attribute generator 
 toolbox.register("attr_int", random.randint, 0, const.MAXPLANETS)
-
-# Structure initializers
-#toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 5 + const.ATTRPERPLANET * const.MAXPLANETS)
-#toolbox.register("individual", tools.initCycle, creator.Individual, (toolbox.genome, toolbox.attr_int,toolbox.attr_int,toolbox.attr_int,toolbox.attr_int, toolbox.attr_int,toolbox.attr_int), n=1)
-
 toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_int, 1)
-
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 toolbox.register("evaluate", helpers.evalXCorrCenter)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
-toolbox.register("select", tools.selTournament, tournsize=2)
+toolbox.register("select", tools.selNSGA2)
 
 
 
@@ -125,7 +119,7 @@ def initGA(processPool):
     CXPB, MUTPB = 0.6, 0.4
     return pop
 
-def runGeneration(pop, processPool, genNum):
+def runIslandGeneration(pop, processPool, genNum):
     # Select the next generation individuals
     # add some sort of elitism or hall of fame
     setNumIslands = 4
@@ -141,7 +135,10 @@ def runGeneration(pop, processPool, genNum):
     #deep copy, are originals still there?
     for i in range(len(parentIslands)):
     #mu/lambeda alg, generate the same number of kids (from best), then mutate/cx kids, then select new population from best of old pop + kids
-        offspring.append(toolbox.select(parentIslands[i], max(round(len(parentIslands[i])/4),2)))
+        numToSelect = max(round(len(parentIslands[i])/4),2)
+        thisIslandKids = toolbox.select(parentIslands[i], numToSelect)
+        print(f"Tried to select {numToSelect}, actually selected {len(thisIslandKids)}")
+        offspring.append(thisIslandKids)
         # Clone the selected individuals
         offspring[i] = list(map(toolbox.clone, offspring[i]))       
         # Apply crossover and mutation on the offspring
@@ -201,6 +198,46 @@ def runGeneration(pop, processPool, genNum):
     pop = islandPops
     hof.update(pop)
     # Gather all the fitnesses in one list and print the stats
+    return pop
+
+def runGeneration(pop, processPool, genNum):
+    offspring = toolbox.select(pop, ceil(len(pop)/ 4))
+    offspring = list(map(toolbox.clone, offspring))
+
+    # Apply crossover and mutation on the offspring
+    for child1, child2 in zip(offspring[::2], offspring[1::2]):
+        if random.random() < CXPB:
+            toolbox.mate(child1, child2)
+            del child1.fitness.values
+            del child2.fitness.values
+            child1.lc = None
+            child2.lc = None
+            child1.created = genNum
+            child2.created = genNum
+        else:
+            toolbox.mutate(child1)
+            toolbox.mutate(child2)
+            del child1.fitness.values
+            del child2.fitness.values
+            child1.lc = None
+            child2.lc = None
+            child1.created = genNum
+            child2.created = genNum
+
+    fitnesses = []
+    curves = []
+
+    for fit, curve in processPool.map(toolbox.evaluate, (indiv.ps for indiv in offspring)):
+        fitnesses.append(fit)
+        curves.append(curve)
+    
+    for ind, fit, curve in zip(offspring, fitnesses, curves):
+        ind.fitness.values = fit
+        ind.lc = curve
+
+    pop = toolbox.select(pop + offspring, len(pop))
+
+    hof.update(pop)
     return pop
         
 def printGenerationData(popStats, timeStats, g):
