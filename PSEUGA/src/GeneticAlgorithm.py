@@ -61,10 +61,10 @@ def runGA(processPool, numGenerations, pop):
         tic = time.perf_counter()
         pop = runGeneration(pop, processPool, g)
 
-        if(input.runSettings['debugMode']):
-            output.saveGenerationData(g, pop, hof)
-        elif(g % input.runSettings['outputGens'] == 0):
-            output.saveGenerationData(g, pop, hof)
+        #if(input.runSettings['debugMode']):
+            #output.saveGenerationData(g, pop, hof)
+        #elif(g % input.runSettings['outputGens'] == 0):
+            #output.saveGenerationData(g, pop, hof)
 
         toc = time.perf_counter()
         thisGenTime = toc - tic
@@ -90,11 +90,11 @@ def initGA(processPool):
     hof = tools.HallOfFame(3)
     pop = toolbox.population(n=input.runSettings['populationSize'])
     tic = time.perf_counter()
-    output.saveGenerationData(-1, pop, hof)
+    #output.saveGenerationData(-1, pop, hof)
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
     helpers.setToKep8b(tempPop[0])
     pop = tempPop
-    output.saveGenerationData(0, pop, hof)
+    #output.saveGenerationData(0, pop, hof)
     toc = time.perf_counter()
     print(f"Randomized individuals in {toc - tic:0.4f} seconds")
 
@@ -238,6 +238,7 @@ def runGeneration(pop, processPool, genNum):
     pop = toolbox.select(pop + offspring, len(pop))
 
     hof.update(pop)
+    print(f"pop len: {len(pop)}")
     return pop
         
 def printGenerationData(popStats, timeStats, g):

@@ -58,39 +58,60 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     runSettings = input.runSettings
     output = Output.getInstance()
     print("--+-- SAVING --+--")
+    sys.stdout.flush()
+
     bestIndividual = hof[0]
     startTime = time.perf_counter()
     output.saveBestIndividual(bestIndividual)
     bestIndivTime = time.perf_counter()
     print(f"Save time for Best Individual: {bestIndivTime - startTime:2.4f}s")
+    sys.stdout.flush()
+
     output.saveRunData(runInfo, runSettings, generationTimings)
     runDataTime = time.perf_counter()
     print(f"Save time for Run Data:        {runDataTime - bestIndivTime:2.4f}s")
+    sys.stdout.flush()
+
     output.savePopulation(finalPopulation)
     popTime = time.perf_counter()
     print(f"Save time for Population:      {popTime - bestIndivTime:2.4f}s")
-    output.saveLightcurve(bestIndividual)
+    sys.stdout.flush()
+
+    output.saveLightcurveAt(bestIndividual, (output.outputPath + output.runName + "/best_curve.csv"))
+    customTarget = CustomLightcurve(helpers.targetCurve)
+    times, flux = customTarget.toXY()
+    arr = np.array([times,flux])
+    np.savetxt(output.outputPath + output.runName + "/target_curve.csv", arr, delimiter = ',')
+    
     lightcurveTime = time.perf_counter()
     print(f"Save time for Lightcurve:      {lightcurveTime - popTime:2.4f}s")
+    sys.stdout.flush()
+    
     output.savePopHistory(runInfo['popHistory'])
     popHistTime = time.perf_counter()
     print(f"Save time for Pop History:     {popHistTime - lightcurveTime:2.4f}s")
+    sys.stdout.flush()
+
     output.saveTimeHistory(runInfo['timeHistory'])
     timeHistTime = time.perf_counter()
     print(f"Save time for Time History:    {timeHistTime - popHistTime:2.4f}s")
+    sys.stdout.flush()
+
+    output.savePopulationFitnesses(finalPopulation)
+    popFitnessTime = time.perf_counter()
+    print(f"Save time for Pop Fitnesses:   {popFitnessTime - timeHistTime:2.4f}s")
+    sys.stdout.flush()
+
     #bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual.ps)
     bestCurve = bestIndividual.lc
     customTarget = CustomLightcurve(helpers.targetCurve)
-    viz.createLightcurvePlot(bestCurve, output.paths['outputFolderPath']+'GeneratedPlot.png')
+    #viz.createLightcurvePlot(bestCurve, output.paths['outputFolderPath']+'GeneratedPlot.png')
     viz.createLightcurvePlot(customTarget, output.paths['outputFolderPath']+'TargetPlot.png')
-    viz.createComparisonPlot(customTarget, bestCurve, output.paths['outputFolderPath']+'CompPlot.png')
+    #viz.createComparisonPlot(customTarget, bestCurve, output.paths['outputFolderPath']+'CompPlot.png')
+    #viz.createNSGAPosPlot(finalPopulation, output.paths['outputFolderPath']+'NSGA2.png')
     plotTime = time.perf_counter()
-    print(f"Save time for plotting:        {plotTime - timeHistTime:2.4f}s")
-    print(f"HOF len: {len(hof)}")
-    bestFitVals = []
-    for i in range(len(hof)):
-        bestFitVals.append(hof[i].fitness.values)
-    print(f"Best fitness values: {bestFitVals}")
+    print(f"Save time for Plotting:        {plotTime - timeHistTime:2.4f}s")
+    sys.stdout.flush()
 
 
 def main():

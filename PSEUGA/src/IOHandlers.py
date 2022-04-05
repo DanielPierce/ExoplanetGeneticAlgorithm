@@ -117,16 +117,18 @@ class InputHandler:
             shutil.rmtree(outputFolder)
             os.makedirs(pathToOutput + self.runName)
 
-        fitsOutputPath = outputPrefix + "_OUT.fits"
+        fitsOutputPath = outputPrefix + "_CURVE.fits"
+        curveAsCSVPath = outputPrefix + "_CURVE.csv"
         populationOutputPath = outputPrefix + "_POP.csv"
+        fitnessesOutputPath = outputPrefix + "_FITNESS.csv"    
         runDataOutputPath = outputPrefix + "_RUNDATA.txt"
         bestIndivOutputPath = outputPrefix + "_BEST.json"
         popHistoryOutputPath = outputPrefix + "_PHISTORY.json"
         timeHistoryOutputPath = outputPrefix + "_THISTORY.json"
 
-        newPaths = {'fitsOutputPath':fitsOutputPath, 'populationOutputPath':populationOutputPath, 'runDataOutputPath':runDataOutputPath, 
+        newPaths = {'fitsOutputPath':fitsOutputPath, 'curveAsCSVPath':curveAsCSVPath,'populationOutputPath':populationOutputPath, 'runDataOutputPath':runDataOutputPath, 
                  'bestIndivOutputPath':bestIndivOutputPath, 'popHistoryOutputPath':popHistoryOutputPath, 'timeHistoryOutputPath':timeHistoryOutputPath, 
-                 'outputFolderPath':outputFolder + '/'}
+                 'outputFolderPath':outputFolder + '/', 'fitnessesOutputPath':fitnessesOutputPath}
         self.paths.update(newPaths)
 
 
@@ -182,8 +184,11 @@ class OutputHandler:
             dataFile.write(str(timings[i]) + "\n")
         dataFile.close()
 
-    def saveLightcurve(self, individual):
-        self.saveLightcurveAt(individual, self.paths['fitsOutputPath'])
+    def saveLightcurve(self, individual, asFITS=True):
+        if asFITS == True:
+            self.saveLightcurveAt(individual, self.paths['fitsOutputPath']) #change this to save as actual .FITS file
+        else:
+            self.saveLightcurveAt(individual, self.paths['curveAsCSVPath'])
 
     def saveLightcurveAt(self, individual, path):
         #lc = helpers.uniformSourceLightcurveAlgorithm(individual)
@@ -219,6 +224,18 @@ class OutputHandler:
         popArray = np.array(popList)
         np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
         np.savetxt(path, popArray, delimiter=',')
+
+    def savePopulationFitnesses(self, pop):
+        self.savePopulationFitnessesAt(pop, self.paths['fitnessesOutputPath'])
+
+    def savePopulationFitnessesAt(self, pop, path):
+        fitnesses = [indiv.fitness.values for indiv in pop]
+        for i in range(len(fitnesses)):
+            fitnesses[i] = fitnesses[i] + (pop[i].created,)
+        fitnessArray = np.array(fitnesses)
+        np.set_printoptions(threshold=np.inf, linewidth=np.inf)  # turn off summarization, line-wrapping
+        np.savetxt(path, fitnessArray, delimiter=',')
+        
 
     def savePopHistory(self, pop):
         jsonPop = jsonpickle.encode(pop)
