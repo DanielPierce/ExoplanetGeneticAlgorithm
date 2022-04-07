@@ -9,14 +9,14 @@ from PSEUGA.common.Functs import Clamp, Lerp
 
 class Planet:
     def __init__(self, rad=0, ec=0, sm=0, inclination=0, lo=0, ao=0, meanAnomaly=0):
-        self.radius = rad
-        self.ecc = ec
-        self.ecc2 = ec * ec
-        self.sma = sm
-        self.inc = inclination
-        self.loan = lo
-        self.aop = ao
-        self.ma = meanAnomaly
+        self.radius = rad # Planet's radius
+        self.ecc = ec # Orbital eccentricity
+        self.ecc2 = ec * ec # eccentricity squared, used for some calculations
+        self.sma = sm # Orbital semi-major axis
+        self.inc = inclination # orbital inclination relative to xy plane
+        self.loan = lo # Orbital longitude of ascending node in xy plane relative to reference direction
+        self.aop = ao # Orbital argument of periapse, ie angle from ascending node
+        self.ma = meanAnomaly # Planetary mean anomaly, ie starting point at beginning of simulation where 0 is (periapse? test this -- 80% sure)
         self.period = 0
 
 
@@ -25,11 +25,11 @@ class Planet:
             return
         self.period = 2 * math.pi * math.sqrt(math.pow(self.sma * 1000, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
 
-    def CalculateCartesianPosition(self, trueAnomaly):
-        #these three need to be fixed to take inclination and excentricity? into account
-        posX = self.sma * math.cos(trueAnomaly)
-        posY = self.sma * math.sin(trueAnomaly)
-        posZ = 0
+    def CalculateCartesianPosition(self, trueAnomaly, eccentricAnomalyAtPosition):
+        distanceFromCentralBody = self.sma * (1 - self.ecc * math.cos(eccentricAnomalyAtPosition))
+
+        posX = distanceFromCentralBody * math.cos(trueAnomaly)
+        posY = distanceFromCentralBody * math.sin(trueAnomaly)
 
         coscos = math.cos(self.aop) * math.cos(self.loan)
         cossin = math.cos(self.aop) * math.sin(self.loan)
@@ -45,9 +45,14 @@ class Planet:
         return [posXDot, posYDot, posZDot]
 
     def CalculateAngularSize(self, trueAnomaly):
+        # how the heck does this have anything to do with angular size? There is nothing related to distance??
         return self.sma * (1 - self.ecc2) / (1 + self.ecc * math.cos(trueAnomaly))     # km?   takes degrees from periapse
-
+    
     def CalculateCurrentTrueAnomaly(self, secondsFromEpoch):
+        eccentricAnomaly = self.CalculateCurrentEccentricAnomaly(secondsFromEpoch)
+        return self.CalculateTrueAnomalyFromEccentric(eccentricAnomaly)
+
+    def CalculateCurrentEccentricAnomaly(self, secondsFromEpoch):
         epochOffsetRadians = secondsFromEpoch / self.period * 2 * math.pi # s / s * radians = radians
 
         currentMeanAnomaly = (self.ma + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
@@ -59,7 +64,9 @@ class Planet:
             return -1
                     
         eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
-                
+        return eccentricAnomaly
+
+    def CalculateTrueAnomalyFromEccentric(self, eccentricAnomaly):        
         trueAnomaly = 2 * math.atan(math.sqrt( (1 + self.ecc)/(1 - self.ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
         trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
         return trueAnomaly
@@ -73,7 +80,7 @@ class Planet:
         print(f"Argument of Periapse: {self.aop} rads")
         print(f"Mean Anomaly: {self.ma} rads")
         if(self.period != 0):
-            print(f"Period: {self.period} km")
+            print(f"Period: {self.period} s")
 
     def Randomize(self):
         #This feels like it could be cleaned up
