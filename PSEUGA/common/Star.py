@@ -21,7 +21,7 @@ class Star:
 
     def Randomize(self):
         self.radius = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
-        self.mass = random.uniform(const.STARMASSMIN, const.STARMASSMIN * 100)
+        self.mass = random.uniform(const.STARMASSMIN, const.STARMASSMAX)
         self.flux = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
         self.distanceTo = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
 
@@ -31,7 +31,7 @@ class Star:
         if random.random() > mutationThreshold:
             self.radius = self.MutateAttribute(self.radius, const.STARRADIUSMUTFACTOR, const.STARRADIUSMIN)
         if random.random() > mutationThreshold:
-            self.mass = self.MutateAttribute(self.radius, const.STARMASSMUTFACTOR, const.STARMASSMIN)
+            self.mass = self.MutateAttribute(self.radius, const.STARMASSMUTFACTOR, const.STARMASSMIN, const.STARMASSMAX)
         if random.random() > mutationThreshold:
             self.flux = self.MutateAttribute(self.flux, const.STARBASEFLUXMUTFACTOR, const.STARBASEFLUXMIN)
         if random.random() > mutationThreshold:

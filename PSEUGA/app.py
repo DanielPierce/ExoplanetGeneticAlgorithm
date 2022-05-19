@@ -40,8 +40,10 @@ def printResults(pop):
     print("---------------BEST INDIVIDUAL---------------")
     print(bestIndiv)
 
-def initializeChildProcesses(target):
+def initializeChildProcesses(target, targetCustom):
     helpers.targetCurve = target
+    helpers.targetCustom = targetCustom
+    
     try:
         input = Input()
     except:
@@ -78,7 +80,7 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     sys.stdout.flush()
 
     output.saveLightcurveAt(bestIndividual, (output.outputPath + output.runName + "/best_curve.csv"))
-    customTarget = CustomLightcurve(helpers.targetCurve)
+    customTarget = helpers.targetCustom
     times, flux = customTarget.toXY()
     arr = np.array([times,flux])
     np.savetxt(output.outputPath + output.runName + "/target_curve.csv", arr, delimiter = ',')
@@ -101,10 +103,8 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     popFitnessTime = time.perf_counter()
     print(f"Save time for Pop Fitnesses:   {popFitnessTime - timeHistTime:2.4f}s")
     sys.stdout.flush()
-
-    #bestCurve = helpers.uniformSourceLightcurveAlgorithm(bestIndividual.ps)
-    bestCurve = bestIndividual.lc
-    customTarget = CustomLightcurve(helpers.targetCurve)
+    
+    customTarget = helpers.targetCustom
     #viz.createLightcurvePlot(bestCurve, output.paths['outputFolderPath']+'GeneratedPlot.png')
     viz.createLightcurvePlot(customTarget, output.paths['outputFolderPath']+'TargetPlot.png')
     #viz.createComparisonPlot(customTarget, bestCurve, output.paths['outputFolderPath']+'CompPlot.png')
@@ -140,11 +140,12 @@ def main():
     except FileNotFoundError:
         print(f"ERROR: File {input.paths['inputFilePath']} does not exist\nEXITING")
         sys.exit(-1)
+    helpers.targetCustom = CustomLightcurve(helpers.targetCurve)
     poolTime = time.perf_counter()
     print(f'Set up target curve in {poolTime - setupTargetTime:2.4f} seconds')
     sys.stdout.flush()
 
-    processPool = mp.Pool(input.runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve])
+    processPool = mp.Pool(input.runSettings['numChildProcesses'], initializeChildProcesses, [helpers.targetCurve, helpers.targetCustom])
     startGATime = time.perf_counter()
     print(f'Set up process pool in {startGATime - poolTime:2.4f} seconds')
     sys.stdout.flush()

@@ -23,6 +23,6 @@ best_fluxes <- as.numeric(best_curve[2,])
 target_timings <- as.numeric(target_curve[1,])
 target_fluxes <- as.numeric(target_curve[2,])
 
-plot(target_timings, target_fluxes, type = 'l', xlab = "Seconds from Epoch", ylab = "Generated Flux (e/s)", xlim = c(min(target_timings),max(target_timings)), ylim = c(min(target_fluxes), max(target_fluxes)), col = "blue")
+#plot(target_timings, target_fluxes, type = 'l', xlab = "Seconds from Epoch", ylab = "Generated Flux (e/s)", xlim = c(min(target_timings),max(target_timings)), ylim = c(min(target_fluxes), max(target_fluxes)), col = "blue")
 
-lines(best_timings, best_fluxes, type = 'l', xlab = "Seconds from Epoch", ylab = "Generated Flux (e/s)", col = "red")
+#lines(best_timings, best_fluxes, type = 'l', xlab = "Seconds from Epoch", ylab = "Generated Flux (e/s)", col = "red")

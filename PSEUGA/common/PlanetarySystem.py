@@ -1,9 +1,12 @@
 
 import random
+from re import L
+
 import PSEUGA.common.Constants as const
 from PSEUGA.common.Planet import Planet
 from PSEUGA.common.Star import Star
 import mpmath as mpm
+import math
 
 class PlanetarySystem:
     def __init__(self, individual=None):
@@ -38,6 +41,10 @@ class PlanetarySystem:
         starRatio = mpm.mpf(starSize / starDist)
 
         return mpm.atan(starRatio)
+
+    def CalculatePlanetPeriods(self):
+        for i in range(len(self.planets)):
+            self.CalculatePlanetaryPeriod(i)
 
     def CalculatePlanetaryPeriod(self, planetIndex):
         thisPlanet = self.planets[planetIndex]

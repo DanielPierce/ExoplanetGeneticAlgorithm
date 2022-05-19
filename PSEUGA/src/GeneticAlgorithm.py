@@ -36,7 +36,7 @@ toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.att
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
-toolbox.register("evaluate", helpers.evalXCorrCenter)
+toolbox.register("evaluate", helpers.calculateTargetedTimesteps)
 toolbox.register("mate", helpers.mate)
 toolbox.register("mutate", helpers.mutation)
 toolbox.register("select", tools.selNSGA2)

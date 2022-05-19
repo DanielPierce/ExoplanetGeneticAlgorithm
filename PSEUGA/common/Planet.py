@@ -1,6 +1,8 @@
 
 
+from cmath import isnan
 import math
+from numpy import NaN
 import orbital
 import random
 import PSEUGA.common.Constants as const
@@ -17,13 +19,96 @@ class Planet:
         self.loan = lo # Orbital longitude of ascending node in xy plane relative to reference direction
         self.aop = ao # Orbital argument of periapse, ie angle from ascending node
         self.ma = meanAnomaly # Planetary mean anomaly, ie starting point at beginning of simulation where 0 is (periapse? test this -- 80% sure)
-        self.period = 0
+        self.period = NaN
+        self.muConst = NaN
 
 
     def CalculatePeriod(self,mu):
-        if self.period != 0:
-            return
-        self.period = 2 * math.pi * math.sqrt(math.pow(self.sma * 1000, 3) / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
+        smaInMeters = math.pow(self.sma * 1000, 3)
+        self.period = 2 * math.pi * math.sqrt(smaInMeters / mu) # m^3 / (m^3 kg^2 s^-2) = s^2, root(s^2) = s
+        self.muConst = math.sqrt(mu / smaInMeters)
+
+
+    def CalculateCartesianCoordsAtTime(self, secondsFromEpoch):
+        unNomralMeanAnomalyAtEpoch = self.ma + secondsFromEpoch * self.muConst
+        meanAnomalyAtEpoch = unNomralMeanAnomalyAtEpoch % (2 * math.pi)
+
+        eccentricAnomalyAtEpoch = orbital.utilities.eccentric_anomaly_from_mean(self.ecc, meanAnomalyAtEpoch)
+        trueAnomalyAtEpoch = orbital.utilities.true_anomaly_from_eccentric(self.ecc, eccentricAnomalyAtEpoch)
+
+        if math.isnan(self.period):
+            raise Exception("period has not yet been calculated")
+
+        distanceFromCentralBody = self.sma * (1 - self.ecc * math.cos(eccentricAnomalyAtEpoch))
+
+        posX = distanceFromCentralBody * math.cos(trueAnomalyAtEpoch)
+        posY = distanceFromCentralBody * math.sin(trueAnomalyAtEpoch)
+
+        coscos = math.cos(self.aop) * math.cos(self.loan)
+        cossin = math.cos(self.aop) * math.sin(self.loan)
+        sincos = math.sin(self.aop) * math.cos(self.loan)
+        sinsin = math.sin(self.aop) * math.sin(self.loan)
+
+        posXDot = posX * (coscos - sinsin * math.cos(self.inc)) - posY * (sincos + cossin * math.cos(self.inc))
+        posYDot = posX * (cossin + sincos * math.cos(self.inc)) + posY * (coscos * math.cos(self.inc) - sinsin)
+        posZDot = posX * math.sin(self.aop) * math.sin(self.inc) + posY * math.cos(self.aop) * math.sin(self.inc)
+
+        return [posXDot, posYDot, posZDot]
+
+    def findIntersectionWithXYPlaneIteratively(self, exp = 5):
+        smallestPositive = math.inf
+        smallestPositiveAngle = 0
+        biggestNegative = -math.inf
+        biggestNegativeAngle = 0
+
+        smallestRecordedAbsDiff = math.inf
+        smallestRecordedAbsDiffAngle = None
+        smallestRecordedAbsDiffPos = None
+        smallestRecordedAbsDiffEpoch = None
+        #gets me the quadrant the intersection is in
+        allXPos = []
+        for i in range(4):
+            angleToSearch = (i * math.pi) / 2
+            epoch = (angleToSearch / (2 * math.pi)) * self.period
+            positionAtEpoch = self.CalculateCartesianCoordsAtTime(epoch)
+            xcoord = positionAtEpoch[0]
+
+            if xcoord > 0 and xcoord < smallestPositive:
+                smallestPositive = xcoord
+                smallestPositiveAngle = angleToSearch
+            if xcoord < 0 and xcoord > biggestNegative:
+                biggestNegative = xcoord
+                biggestNegativeAngle = angleToSearch
+            if abs(xcoord) < smallestRecordedAbsDiff:
+                smallestRecordedAbsDiff = abs(xcoord) 
+                smallestRecordedAbsDiffAngle = angleToSearch
+                smallestRecordedAbsDiffPos = positionAtEpoch
+                smallestRecordedAbsDiffEpoch = epoch
+            allXPos = allXPos + [xcoord]
+
+        #gets me the 1/2^expth of circle, subtract two since already have quadrant (1/2^2) from above
+        #possibly want to redo this so that it goes until distance is less than radius of planet?
+        for i in range(exp-2):
+            angleToSearch = (smallestPositiveAngle + biggestNegativeAngle) / 2
+            epoch = (angleToSearch / (2 * math.pi)) * self.period
+            positionAtEpoch = self.CalculateCartesianCoordsAtTime(epoch)
+            xcoord = positionAtEpoch[0]
+            #if abs(xcoord)  < 0.0000000001:
+            #    return epoch
+            if xcoord > 0 and xcoord < smallestPositive:
+                smallestPositive = xcoord
+                smallestPositiveAngle = angleToSearch
+            if xcoord < 0 and xcoord > biggestNegative:
+                biggestNegative = xcoord
+                biggestNegativeAngle = angleToSearch
+            if abs(xcoord) < smallestRecordedAbsDiff:
+                smallestRecordedAbsDiff = abs(xcoord) 
+                smallestRecordedAbsDiffAngle = angleToSearch
+                smallestRecordedAbsDiffPos = positionAtEpoch
+                smallestRecordedAbsDiffEpoch = epoch
+
+        return smallestRecordedAbsDiffEpoch, smallestRecordedAbsDiffPos
+
 
     def CalculateCartesianPosition(self, trueAnomaly, eccentricAnomalyAtPosition):
         distanceFromCentralBody = self.sma * (1 - self.ecc * math.cos(eccentricAnomalyAtPosition))
@@ -36,12 +121,10 @@ class Planet:
         sincos = math.sin(self.aop) * math.cos(self.loan)
         sinsin = math.sin(self.aop) * math.sin(self.loan)
 
-        posXDot = posX * coscos - sinsin * math.cos(self.inc) - posY * sincos + cossin * math.cos(self.inc)
-        posYDot = posX * cossin + sincos * math.cos(self.inc) + posY * coscos * math.cos(self.inc) - sinsin
+        posXDot = posX * (coscos - sinsin * math.cos(self.inc)) - posY * (sincos + cossin * math.cos(self.inc))
+        posYDot = posX * (cossin + sincos * math.cos(self.inc)) + posY * (coscos * math.cos(self.inc) - sinsin)
         posZDot = posX * math.sin(self.aop) * math.sin(self.inc) + posY * math.cos(self.aop) * math.sin(self.inc)
 
-        # intertial reference frame, but relative to what? orbital frame has z axis perpendicular to orbital plane and x axis pointing to periapsis of orbit
-        # May have to rotate to meet expected reference frame
         return [posXDot, posYDot, posZDot]
 
     def CalculateAngularSize(self, trueAnomaly):
@@ -58,16 +141,15 @@ class Planet:
         currentMeanAnomaly = (self.ma + epochOffsetRadians + 2 * math.pi) % (2 * math.pi)
 
         try:
-            eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(self.ecc, currentMeanAnomaly) # radians???
+            eccentricAnomaly = orbital.utilities.eccentric_anomaly_from_mean(self.ecc, currentMeanAnomaly) # radians
         except:
-            #print(f"Planet {planetIndex} eccentric anomaly could not converge at timestep {timeIndex} in {toc - tic:0.4f} seconds")
             return -1
                     
         eccentricAnomaly = (eccentricAnomaly + 2 * math.pi) % (2 * math.pi)
         return eccentricAnomaly
 
     def CalculateTrueAnomalyFromEccentric(self, eccentricAnomaly):        
-        trueAnomaly = 2 * math.atan(math.sqrt( (1 + self.ecc)/(1 - self.ecc) ) * math.tan(eccentricAnomaly / 2)) # radians???
+        trueAnomaly = 2 * math.atan(math.sqrt( (1 + self.ecc)/(1 - self.ecc) ) * math.tan(eccentricAnomaly / 2)) # radians
         trueAnomaly = (trueAnomaly + 2 * math.pi) % (2 * math.pi)
         return trueAnomaly
 
