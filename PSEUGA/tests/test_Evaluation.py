@@ -1,9 +1,9 @@
 
 
-from common.TimeStep import TimeStep
+from PSEUGA.common.TimeStep import TimeStep
 from datetime import datetime
-from src.Thesis import uniformSourceResultAlgorithm
-from common.CustomLightcurve import CustomLightcurve
+from PSEUGA.src.Thesis import uniformSourceResultAlgorithm
+from PSEUGA.common.CustomLightcurve import CustomLightcurve
 
 import math
 import dateutil.parser as dateparser
@@ -66,6 +66,7 @@ class TestUniformSourceAlgorithm(unittest.TestCase):
         self.assertEqual(uniformSourceResultAlgorithm(d,rp,rstar,z,z2,p,p2), 1)
 
 class TestCustomLightcurves(unittest.TestCase):
+    @unittest.skip("Old method of comparing times/dates")
     def test_creation(self):
         times = [9,8,7,6,5,4,3,2,1,0]
         epoch = datetime.now()
@@ -75,6 +76,7 @@ class TestCustomLightcurves(unittest.TestCase):
         sorted = test.sortByFlux()
         self.assertEqual(sorted.timeSteps[0].distanceToTimestep(sorted.timeSteps[1]), 7)
     
+    @unittest.skip("Old method of comparing times/dates")
     def test_distance(self):
         times = [9,8,7,6,5,4,3,2,1,0]
         epoch = datetime.now()

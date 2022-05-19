@@ -34,12 +34,12 @@ class CustomLightcurve:
         self.sortByDate()
 
     @staticmethod
-    def createFromCopy(targetCLC):
+    def createFromCopy(targetCLC, newFlux = 0):
         newCurve = CustomLightcurve()
         newCurve.epochTime = targetCLC.epochTime
         newCurve.timeSteps = copy.deepcopy(targetCLC.timeSteps)
         for ts in newCurve.timeSteps:
-            ts.flux = 0
+            ts.flux = newFlux
             ts.error = 0
         return newCurve
 
@@ -53,7 +53,7 @@ class CustomLightcurve:
         print(f"Epoch time: {self.epochTime}")
         for i in range(len(self.timeSteps)):
             self.timeSteps[i].printTimestep()
-    
+    #could cache these
     def getTimes(self):
         times = []
         for i in range(len(self.timeSteps)):

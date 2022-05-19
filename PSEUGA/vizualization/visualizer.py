@@ -15,7 +15,7 @@ def createLightcurvePlot(lightcurve, path):
     plt.xlabel('Seconds from Epoch')
     plt.ylabel('PDCSAP Flux')
     plt.savefig(path, bbox_inches='tight')
-    #print(f'saved to {path}')
+    plt.close()
 
 def createComparisonPlot(targetCurve, generatedCurve, path):
     
@@ -34,7 +34,7 @@ def createComparisonPlot(targetCurve, generatedCurve, path):
     plt.xlabel('Seconds from Epoch')
     plt.ylabel('Flux')
     plt.savefig(path, bbox_inches='tight')
-    #print(f'saved to {path}')
+    plt.close()
 
 def createXCorrPlot(correlationMap, path):
     x = [i for i in range(len(correlationMap))]
@@ -48,4 +48,23 @@ def createXCorrPlot(correlationMap, path):
     plt.xlabel('index')
     plt.ylabel('match')
     plt.savefig(path, bbox_inches='tight')
-    #print(f'saved to {path}')
+    plt.close()
+
+def createNSGAPosPlot(pop, path):
+    fitnesses = [indiv.fitness.values for indiv in pop]
+    x  = [fit[0] for fit in fitnesses]
+    y  = [fit[1] for fit in fitnesses]
+    z  = [fit[2] for fit in fitnesses]
+    
+    fig = plt.figure()
+
+    ax = fig.add_subplot(projection = '3d')
+
+    ax.scatter(x,y,z)
+
+    ax.set_xlabel('Cross Correlation Match')
+    ax.set_ylabel('XC Distance from Center')
+    ax.set_zlabel('Minimum Planetary Distance')
+    
+    plt.savefig(path,bbox_inches='tight')
+    plt.close()

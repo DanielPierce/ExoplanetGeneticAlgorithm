@@ -1,3 +1,4 @@
+from datetime import timedelta
 from PSEUGA.common.TimeStep import TimeStep
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
@@ -26,6 +27,83 @@ import sys
 
 targetStar = 'TIC 307210830 c'
 targetCurve = lk.LightCurve()
+targetCustom = None
+
+def calculateTargetedTimesteps(thisSystem):
+    finalCurve = CustomLightcurve()
+    finalCurve.epochTime = targetCustom.epochTime
+
+    planetCurves = []
+    thisSystem.CalculatePlanetPeriods()
+    
+    for planet in thisSystem.planets[:thisSystem.numActivePlanets]:
+        planetCurve = CustomLightcurve.createFromCopy(targetCustom, thisSystem.star.flux)
+        times = planetCurve.getTimes()
+        intersectEpochInSeconds, iterativePos = planet.findIntersectionWithXYPlaneIteratively()
+        intersectEpoch = times[0] + timedelta(seconds=intersectEpochInSeconds)
+
+        (closestTimeIndex, closestTime) = min(enumerate(times), key=lambda x: abs(x[1] - intersectEpoch))
+
+        intersects = [closestTimeIndex]
+        try:
+            nextIntersectTime = intersectEpoch + timedelta(seconds=planet.period)
+        except:
+            print(f"could not add {planet.period} seconds to {intersectEpoch}, stellarmass is {thisSystem.star.mass / const.STARMASSMIN}x min w/ sma {planet.sma}km")
+        finalStepTime = times[-1]
+
+        forwardChecks = []
+        reverseChecks =[]
+        currentStep = None
+
+        dists = []
+
+        while nextIntersectTime < finalStepTime:
+            (closestTimeIndex, closestTime) = min(enumerate(times), key=lambda x: abs(x[1] - nextIntersectTime))
+            intersects.append(closestTimeIndex)
+            try:
+                nextIntersectTime += timedelta(seconds=planet.period)
+            except:
+                print(f"could not add {planet.period} seconds to {nextIntersectTime}, stellarmass is {thisSystem.star.mass / const.STARMASSMIN}x min w/ sma {planet.sma}km")
+                break
+            currentStep = planetCurve.timeSteps[closestTimeIndex]
+            currentStep.flux, dist = calculateTimestep(currentStep, planet, thisSystem.star)
+            dists.append(dist)
+            if currentStep.flux < thisSystem.star.flux:
+                if(closestTimeIndex != len(times)-1):
+                    forwardChecks.append(closestTimeIndex + 1)
+                if(closestTimeIndex != 0):
+                    reverseChecks.append(closestTimeIndex - 1)
+        
+        #if(len(intersects) > 100):
+        #    print(f"warning! Planet had {len(intersects)} intersects, stellarmass is {thisSystem.star.mass / const.STARMASSMIN}x min w/ sma {planet.sma}km")
+
+        for index in forwardChecks:
+            currentStep = planetCurve.timeSteps[index]
+            currentStep.flux, dist = calculateTimestep(currentStep, planet, thisSystem.star)
+            if currentStep.flux < thisSystem.star.flux:
+                if(index != len(times)-1):
+                    forwardChecks.append(index + 1)
+
+        for index in reverseChecks:
+            currentStep = planetCurve.timeSteps[index]
+            currentStep.flux, dist = calculateTimestep(currentStep, planet, thisSystem.star)
+            if currentStep.flux < thisSystem.star.flux:
+                if(index != 0):
+                    reverseChecks.append(index - 1)
+
+        planetCurves.append(planetCurve)
+    
+
+    
+    for i in range(len(targetCustom.timeSteps)):
+        minFlux = thisSystem.star.flux
+        for j in range(len(planetCurves)):
+            planetCurveFlux = planetCurves[j].timeSteps[i].flux
+            minFlux = min(minFlux, planetCurveFlux)
+        newStep = TimeStep(targetCustom.timeSteps[i].secondsFromEpoch, minFlux)
+        finalCurve.timeSteps.append(newStep)
+
+    return [0, abs(0), 0], finalCurve
 
 
 def generateRandomLightCurve(individual):
@@ -58,12 +136,13 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
     planetCurves = []
     planetMinDists = []
     input = InputHandler.getInstance()
+    
     for planetIndex in range(thisSystem.numActivePlanets):
         
         thisPlanet = thisSystem.GetPlanet(planetIndex)
         
-        customCurve = CustomLightcurve(targetCurve)
-        customCurve.setBaseFlux(thisSystem.star.flux)
+        global targetCustom
+        customCurve = CustomLightcurve.createFromCopy(targetCustom, thisSystem.star.flux)
                                                                                                               
         thisSystem.CalculatePlanetaryPeriod(planetIndex)
         
@@ -118,9 +197,14 @@ def uniformSourceLightcurveAlgorithm(thisSystem):
 
 def calculateTimestep(timestep, thisPlanet, thisStar):
     deltaTime = timestep.secondsFromEpoch
-    trueAnomaly = thisPlanet.CalculateCurrentTrueAnomaly(deltaTime)
 
-    cartesianPosition = thisPlanet.CalculateCartesianPosition(trueAnomaly)
+    cartesianPosition = thisPlanet.CalculateCartesianCoordsAtTime(deltaTime)
+
+    #eccentricAnomaly = thisPlanet.CalculateCurrentEccentricAnomaly(deltaTime)
+
+    #trueAnomaly = thisPlanet.CalculateTrueAnomalyFromEccentric(eccentricAnomaly)
+
+    #cartesianPosition = thisPlanet.CalculateCartesianPosition(trueAnomaly, eccentricAnomaly)
     
 
     rstar = getAngularSizeFromSizeAndDist(thisStar.radius, thisStar.distanceTo)
@@ -234,6 +318,7 @@ def randomizeIndividual(individual):
             individual.ps.star.Randomize()
         else:
             individual.ps.planets[index].Randomize()
+    individual.ps.CalculatePlanetPeriods()
     return individual
 
 def mate(individualA, individualB):
@@ -269,7 +354,7 @@ def setToKep8b(individual):
     kep8.radius = 1033524.888
     kep8.mass = 1.213 * 1.989 * math.pow(10,30)
     kep8.flux = 880
-    thisSystem.CalculatePlanetaryPeriod(0)
-    #print(f"Kepler-8b period: {kep8b.period} seconds")
+    individual.ps.CalculatePlanetPeriods()
+    #print(f"Kepler-8b period: {thisSystem.planets[0].period} with sma {thisSystem.planets[0].sma} and star mass {thisSystem.star.mass} gives mu {thisSystem.planets[0].muConst}")
 
 
