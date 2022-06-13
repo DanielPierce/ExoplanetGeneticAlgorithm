@@ -84,6 +84,29 @@ class CustomLightcurve:
         for step in self.timeSteps:
             step.flux = baseFluxValue
 
+    def getNoiseDiffFromAvg(self):
+        fluxAsList = self.getFluxAsList()
+        avgFlux = sum(fluxAsList) / len(fluxAsList)
+
+        noise = []
+        for flux in fluxAsList:
+            noise.append(flux - avgFlux)
+
+        return noise
+
+    def getNoisyPredictionFromNoise(self, baseFlux, noise):
+        noisyPrediction = []
+
+        for i in range(len(noise)):
+            fluxAtStep = self.timeSteps[i].flux
+            if(fluxAtStep < baseFlux):
+                noisyPrediction.append(fluxAtStep+ noise[i] * 0.5)
+            else:
+                noisyPrediction.append(fluxAtStep + noise[i])
+
+        return noisyPrediction
+
+
     def toXY(self):
         x = []
         y = []

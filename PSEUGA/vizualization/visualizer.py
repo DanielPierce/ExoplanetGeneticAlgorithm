@@ -17,24 +17,26 @@ def createLightcurvePlot(lightcurve, path):
     plt.savefig(path, bbox_inches='tight')
     plt.close()
 
-def createComparisonPlot(targetCurve, generatedCurve, path):
+def createComparisonPlot(targetCurve, noisyVals, path):
     
     targetCurve.sortByDate()
     tX, tY = targetCurve.toXY()
 
-    generatedCurve.sortByDate()
-    gX, gY = generatedCurve.toXY()
+    #generatedCurve.sortByDate()
+    #gX, gY = generatedCurve.toXY()
 
     f = plt.figure()
     f.set_figwidth(25)
     f.set_figheight(5)
     
     plt.plot(tX, tY)
-    plt.plot(gX, gY, 'r')
+    plt.plot(tX, noisyVals, 'r')
     plt.xlabel('Seconds from Epoch')
     plt.ylabel('Flux')
     plt.savefig(path, bbox_inches='tight')
     plt.close()
+
+
 
 def createXCorrPlot(correlationMap, path):
     x = [i for i in range(len(correlationMap))]

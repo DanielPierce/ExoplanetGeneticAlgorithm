@@ -113,6 +113,13 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     print(f"Save time for Plotting:        {plotTime - timeHistTime:2.4f}s")
     sys.stdout.flush()
 
+    targetNoise = customTarget.getNoiseDiffFromAvg()
+    noisyBest = bestIndividual.lc.getNoisyPredictionFromNoise(bestIndividual.ps.star.flux ,targetNoise)
+    viz.createComparisonPlot(customTarget, noisyBest, output.paths['outputFolderPath']+'NoisyCompPlot.png')
+    gX, gY = bestIndividual.lc.toXY()
+    viz.createComparisonPlot(customTarget, gY, output.paths['outputFolderPath']+'SimulCompPlot.png')
+
+
 
 def main():
     startupTime = time.perf_counter()
