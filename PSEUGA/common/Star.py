@@ -22,7 +22,7 @@ class Star:
     def Randomize(self):
         self.radius = random.uniform(const.STARRADIUSMIN, const.STARRADIUSMIN * 100)
         self.mass = random.uniform(const.STARMASSMIN, const.STARMASSMAX)
-        self.flux = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 100)
+        self.flux = random.uniform(const.STARBASEFLUXMIN, const.STARBASEFLUXMIN * 1000)
         self.distanceTo = random.uniform(const.DISTANCEMIN, const.DISTANCEMIN * 100)
 
     def Mutate(self):

@@ -1,5 +1,6 @@
 
 from math import ceil
+import math
 from deap.tools.support import Statistics
 from deap import base
 from deap import creator
@@ -18,6 +19,7 @@ from PSEUGA.src.IOHandlers import InputHandler as Input, OutputHandler as Output
 
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
+import PSEUGA.vizualization.visualizer as viz
 
 import numpy as np
 
@@ -92,7 +94,9 @@ def initGA(processPool):
     tic = time.perf_counter()
     #output.saveGenerationData(-1, pop, hof)
     tempPop = list(processPool.map(helpers.randomizeIndividual, pop))
-    helpers.setToKep8b(tempPop[0])
+    #helpers.setToKep8b(tempPop[0])
+    #helpers.setToKep8b(tempPop[1], -0.57 * math.pi) # -0.57 pi
+    #helpers.setToKep8b(tempPop[2], 0.051 * math.pi)
     pop = tempPop
     #output.saveGenerationData(0, pop, hof)
     toc = time.perf_counter()
@@ -201,7 +205,7 @@ def runIslandGeneration(pop, processPool, genNum):
     return pop
 
 def runGeneration(pop, processPool, genNum):
-    offspring = toolbox.select(pop, ceil(len(pop)/ 4))
+    offspring = toolbox.select(pop, ceil(len(pop)/ 10))
     offspring = list(map(toolbox.clone, offspring))
 
     # Apply crossover and mutation on the offspring
