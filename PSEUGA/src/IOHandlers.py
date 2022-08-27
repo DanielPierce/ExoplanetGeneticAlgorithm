@@ -113,8 +113,9 @@ class InputHandler:
     def addOutputPathsFromName(self, pathToOutput):
         outputFolder = pathToOutput + self.runName
         outputPrefix = outputFolder + '/' + self.runName
-        if os.path.isdir(outputFolder) and current_process().name == 'MainProcess':
-            shutil.rmtree(outputFolder)
+        if current_process().name == 'MainProcess':
+            if os.path.isdir(outputFolder):
+                shutil.rmtree(outputFolder)
             os.makedirs(pathToOutput + self.runName)
 
         fitsOutputPath = outputPrefix + "_CURVE.fits"

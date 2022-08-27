@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from PSEUGA.common.TimeStep import TimeStep
 from PSEUGA.common.CustomLightcurve import CustomLightcurve
 from PSEUGA.common.PlanetarySystem import PlanetarySystem
@@ -35,6 +35,8 @@ def calculateTargetedTimesteps(thisSystem):
 
     planetCurves = []
     thisSystem.CalculatePlanetPeriods()
+
+    closestApproach = math.inf
     
     for planet in thisSystem.planets[:thisSystem.numActivePlanets]:
         planetCurve = CustomLightcurve.createFromCopy(targetCustom, thisSystem.star.flux)
@@ -55,8 +57,6 @@ def calculateTargetedTimesteps(thisSystem):
         reverseChecks =[]
         currentStep = None
 
-        dists = []
-
         while nextIntersectTime < finalStepTime:
             (closestTimeIndex, closestTime) = min(enumerate(times), key=lambda x: abs(x[1] - nextIntersectTime))
             intersects.append(closestTimeIndex)
@@ -67,15 +67,16 @@ def calculateTargetedTimesteps(thisSystem):
                 break
             currentStep = planetCurve.timeSteps[closestTimeIndex]
             currentStep.flux, dist = calculateTimestep(currentStep, planet, thisSystem.star)
-            dists.append(dist)
+            if dist < closestApproach:
+                closestApproach = dist
             if currentStep.flux < thisSystem.star.flux:
                 if(closestTimeIndex != len(times)-1):
                     forwardChecks.append(closestTimeIndex + 1)
                 if(closestTimeIndex != 0):
                     reverseChecks.append(closestTimeIndex - 1)
         
-        #if(len(intersects) > 100):
-        #    print(f"warning! Planet had {len(intersects)} intersects, stellarmass is {thisSystem.star.mass / const.STARMASSMIN}x min w/ sma {planet.sma}km")
+        if(len(intersects) > 100):
+            print(f"warning! Planet had {len(intersects)} intersects, stellarmass is {thisSystem.star.mass / const.STARMASSMIN}x min w/ sma {planet.sma}km")
 
         for index in forwardChecks:
             currentStep = planetCurve.timeSteps[index]
@@ -103,8 +104,23 @@ def calculateTargetedTimesteps(thisSystem):
         newStep = TimeStep(targetCustom.timeSteps[i].secondsFromEpoch, minFlux)
         finalCurve.timeSteps.append(newStep)
 
-    return [0, abs(0), 0], finalCurve
 
+    extendedGenerated = finalCurve.createExtension(thisSystem.star.flux)
+    correlationMap = np.correlate(extendedGenerated.getFluxAsList(), targetCustom.getFluxAsList(), 'full')
+    numTimesteps = len(finalCurve.timeSteps)
+
+    correlationMap = correlationMap[numTimesteps:-(numTimesteps-1)]
+
+    maxValue = 0
+    maxIndex = 0
+    for i in range(len(correlationMap)):
+        if(correlationMap[i] > maxValue):
+            maxValue = correlationMap[i]
+            maxIndex = i
+    halfLen = len(correlationMap)/2
+    diff = halfLen - maxIndex
+    output = OutputHandler.getInstance()
+    return [maxValue, abs(diff), closestApproach], finalCurve
 
 def generateRandomLightCurve(individual):
     myTimes = targetCurve.time
@@ -302,19 +318,19 @@ def mutation(individual):
 
     for index in range(const.MAXPLANETS + 2):
         if random.random() > mutationThreshold:
-            if index == 21:
+            if index == const.MAXPLANETS + 1:
                 individual.ps.numActivePlanets += random.randint(-1 * const.NUMPLANETSMUTFACTOR, const.NUMPLANETSMUTFACTOR)
                 individual.ps.numActivePlanets = Clamp(individual.ps.numActivePlanets, 0, const.MAXPLANETS)
-            elif index == 20:
+            elif index == const.MAXPLANETS:
                 individual.ps.star.Mutate()
             else:
                 individual.ps.planets[index].Mutate()
 
 def randomizeIndividual(individual):
-    for index in range(0,22):
-        if index == 21:
-            individual.ps.numActivePlanets = random.randint(0,20)
-        elif index == 20:
+    for index in range(0,const.MAXPLANETS + 2):
+        if index == const.MAXPLANETS + 1:
+            individual.ps.numActivePlanets = random.randint(0,const.MAXPLANETS)
+        elif index == const.MAXPLANETS:
             individual.ps.star.Randomize()
         else:
             individual.ps.planets[index].Randomize()
@@ -324,12 +340,12 @@ def randomizeIndividual(individual):
 def mate(individualA, individualB):
     numLoops = 5
     for loopIndex in range(numLoops):
-        index = random.randint(0,21)
-        if index == 21:
+        index = random.randint(0,const.MAXPLANETS)
+        if index == const.MAXPLANETS + 1:
             tempActivePlanets = individualA.ps.numActivePlanets
             individualA.ps.numActivePlanets = individualB.ps.numActivePlanets
             individualB.ps.numActivePlanets = tempActivePlanets
-        elif index == 20:
+        elif index == const.MAXPLANETS:
             tempStar = individualA.ps.star
             individualA.ps.star = individualB.ps.star
             individualB.ps.star = tempStar
@@ -338,7 +354,7 @@ def mate(individualA, individualB):
             individualA.ps.planets[index] = individualB.ps.planets[index]
             individualB.ps.planets[index] = tempPlanet
 
-def setToKep8b(individual):
+def setToKep8b(individual, maOffset = 0):
     thisSystem:PlanetarySystem = individual.ps
     thisSystem.numActivePlanets = 1
     kep8b:Planet = thisSystem.planets[0]
@@ -348,7 +364,7 @@ def setToKep8b(individual):
     kep8b.inc = 0
     kep8b.loan = 0
     kep8b.aop = 0
-    kep8b.ma = 0
+    kep8b.ma = maOffset
     kep8:Star = thisSystem.star
     kep8.distanceTo = 9460730000000 * 3430
     kep8.radius = 1033524.888

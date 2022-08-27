@@ -105,13 +105,15 @@ def saveResults(hof, runInfo, generationTimings, finalPopulation):
     sys.stdout.flush()
     
     customTarget = helpers.targetCustom
-    #viz.createLightcurvePlot(bestCurve, output.paths['outputFolderPath']+'GeneratedPlot.png')
+    viz.createLightcurvePlot(bestIndividual.lc, output.paths['outputFolderPath']+'GeneratedPlot.png')
     viz.createLightcurvePlot(customTarget, output.paths['outputFolderPath']+'TargetPlot.png')
-    #viz.createComparisonPlot(customTarget, bestCurve, output.paths['outputFolderPath']+'CompPlot.png')
-    #viz.createNSGAPosPlot(finalPopulation, output.paths['outputFolderPath']+'NSGA2.png')
+    gX, gY = bestIndividual.lc.toXY()
+    viz.createComparisonPlot(customTarget, gY, output.paths['outputFolderPath']+'SimulCompPlot.png')
     plotTime = time.perf_counter()
     print(f"Save time for Plotting:        {plotTime - timeHistTime:2.4f}s")
     sys.stdout.flush()
+
+
 
 
 def main():

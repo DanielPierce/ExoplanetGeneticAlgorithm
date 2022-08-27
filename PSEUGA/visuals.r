@@ -3,11 +3,11 @@ library("car")
 run_name = "kepler8testing"
 
 fitness_csv_path <- paste(run_name, "/", run_name, "_FITNESS.csv", sep = "", collapse = NULL)
-best_curve_csv_path <- paste(run_name, "/", "best_curve.csv", sep = "", collapse = NULL)
+#best_curve_csv_path <- paste(run_name, "/", "best_curve.csv", sep = "", collapse = NULL)
 target_curve_csv_path <- paste(run_name, "/", "target_curve.csv", sep = "", collapse = NULL)
 
 fitnesses <- read.csv(fitness_csv_path, header = FALSE, col.names = c("XCorrMax (^)", "XCorrDistFromCenter (v)", "MinDistance (v)", "group"))
-best_curve <- read.csv(best_curve_csv_path, header = FALSE, row.names = c("Seconds from epoch", "Flux (e/s)"))
+#best_curve <- read.csv(best_curve_csv_path, header = FALSE, row.names = c("Seconds from epoch", "Flux (e/s)"))
 target_curve <- read.csv(target_curve_csv_path, header = FALSE, row.names = c("Seconds from epoch", "Flux (e/s)"))
 
 xcorr <- fitnesses$XCorrMax....

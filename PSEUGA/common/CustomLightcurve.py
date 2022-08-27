@@ -84,6 +84,7 @@ class CustomLightcurve:
         for step in self.timeSteps:
             step.flux = baseFluxValue
 
+
     def toXY(self):
         x = []
         y = []
